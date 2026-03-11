@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>רוח חשמונאית - מערכת דיווח שבועי</title>
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1B4332">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="רוח חשמונאית">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192x192.png">
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/ruach-hashmonaim/ruach-hashmonait/main/logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" onerror="">
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js" onerror="document.getElementById('filter-warning').style.display='block'"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js" onerror="document.getElementById('filter-warning').style.display='block'"></script>
+    <script>
+    // Load hebcal gracefully — not critical for app to work
+    (function(){
+        var s=document.createElement('script');
+        s.src='https://unpkg.com/@hebcal/core@5.4.11/dist/bundle.min.js';
+        s.onerror=function(){console.warn('Hebcal not loaded — Hebrew dates disabled');};
+        document.head.appendChild(s);
+    })();
+    </script>
+    <style>
+        :root {
+            --primary: #1B4332;
+            --primary-light: #2D6A4F;
+            --primary-lighter: #40916C;
+            --accent: #D4A843;
+            --accent-light: #E8C96A;
+            --bg: #F8F6F0;
+            --card: #FFFFFF;
+            --text: #1A1A2E;
+            --text-secondary: #555;
+            --border: #E0DDD5;
+            --success: #2D6A4F;
+            --warning: #E07C24;
+            --danger: #C0392B;
+            --shadow: 0 2px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Heebo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; line-height: 1.6; }
+
+        /* HEADER */
+        .header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; padding: 12px 20px; padding-top: calc(12px + env(safe-area-inset-top, 0px)); position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 20px rgba(27,67,50,0.3); }
+        .header-content { max-width: 900px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .header-right { display: flex; align-items: center; gap: 10px; }
+        .header-logo { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); }
+        .header h1 { font-size: 1.15rem; font-weight: 700; }
+        .header-user { font-size: 0.78rem; opacity: 0.85; }
+        .nav-btns { display: flex; gap: 6px; }
+        .nav-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.25); color: white; padding: 7px 14px; border-radius: var(--radius-sm); cursor: pointer; font-family: inherit; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; }
+        .nav-btn:hover { background: rgba(255,255,255,0.25); }
+        .nav-btn.active { background: var(--accent); color: var(--primary); font-weight: 600; }
+        .btn-logout { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #ffcdd2; padding: 7px 12px; border-radius: var(--radius-sm); cursor: pointer; font-family: inherit; font-size: 0.78rem; }
+
+        /* CONTAINER */
+        .container { max-width: 900px; margin: 0 auto; padding: 16px; }
+        .screen { display: none; }
+        .screen.active { display: block; }
+
+        /* CARDS */
+        .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 14px; border: 1px solid var(--border); }
+        .card-title { font-size: 1.05rem; font-weight: 700; color: var(--primary); margin-bottom: 14px; padding-bottom: 10px; border-bottom: 2px solid var(--accent); display: flex; align-items: center; gap: 8px; }
+        .card-title .icon { width: 26px; height: 26px; background: var(--primary); color: white; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }
+
+        /* FORM ELEMENTS */
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: 600; font-size: 0.88rem; color: var(--text); margin-bottom: 4px; }
+        .target-badge { display: inline-block; background: #EBF5EE; color: var(--success); font-size: 0.73rem; font-weight: 600; padding: 2px 10px; border-radius: 20px; margin-right: 4px; }
+        input[type="text"], input[type="number"], input[type="password"], input[type="date"], textarea, select {
+            width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+            font-family: inherit; font-size: 0.92rem; background: #FAFAF8; color: var(--text); transition: border-color 0.2s, box-shadow 0.2s; -webkit-appearance: none;
+        }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary-lighter); box-shadow: 0 0 0 3px rgba(45,106,79,0.12); background: white; }
+        textarea { min-height: 70px; resize: vertical; }
+        input[type="number"] { -moz-appearance: textfield; text-align: center; font-size: 1.05rem; font-weight: 600; }
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23555' d='M6 8L1 3h10z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: left 14px center; padding-left: 36px; }
+
+        /* DAYS GRID */
+        .days-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .day-chip { display: flex; align-items: center; justify-content: center; padding: 9px; border: 2px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; font-size: 0.88rem; font-weight: 500; transition: all 0.2s; background: #FAFAF8; user-select: none; }
+        .day-chip:hover { border-color: var(--primary-lighter); }
+        .day-chip.selected { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* BUTTONS */
+        .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%); color: white; border: none; padding: 13px 24px; border-radius: var(--radius-sm); font-family: inherit; font-size: 1rem; font-weight: 700; cursor: pointer; width: 100%; transition: all 0.2s; box-shadow: 0 4px 15px rgba(27,67,50,0.3); }
+        .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(27,67,50,0.4); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: white; color: var(--primary); border: 2px solid var(--primary); padding: 10px 20px; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-secondary:hover { background: #EBF5EE; }
+        .btn-sm { padding: 6px 14px; font-size: 0.82rem; }
+        .btn-danger { background: var(--danger); color: white; border: none; padding: 8px 16px; border-radius: var(--radius-sm); font-family: inherit; cursor: pointer; font-size: 0.85rem; }
+
+        /* WEEK PICKER */
+        .week-picker { display: flex; align-items: center; gap: 10px; }
+        .week-picker button { background: var(--primary); color: white; border: none; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; }
+        .week-display { flex: 1; text-align: center; font-weight: 600; font-size: 0.9rem; background: #FAFAF8; padding: 10px 8px; border-radius: var(--radius-sm); border: 1.5px solid var(--border); line-height: 1.5; }
+
+        /* LOGIN SCREEN */
+        .login-screen { max-width: 400px; margin: 40px auto; padding: 20px; text-align: center; }
+        .login-logo { width: 90px; height: 90px; border-radius: 50%; object-fit: cover; margin: 0 auto 16px; display: block; border: 3px solid var(--accent); box-shadow: 0 4px 20px rgba(212,168,67,0.3); }
+        .login-screen h2 { font-size: 1.4rem; color: var(--primary); margin-bottom: 4px; }
+        .login-screen .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; }
+        .pin-input { letter-spacing: 8px; text-align: center; font-size: 1.5rem; font-weight: 700; }
+
+        /* STATUS */
+        .metric-status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 6px; }
+        .metric-status.green { background: var(--success); }
+        .metric-status.red { background: var(--danger); }
+
+        /* DASHBOARD STATS */
+        .dash-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+        .dash-stat { background: white; border-radius: var(--radius-sm); padding: 14px; text-align: center; border: 1px solid var(--border); }
+        .dash-stat .number { font-size: 1.6rem; font-weight: 800; color: var(--primary); }
+        .dash-stat .label { font-size: 0.78rem; color: var(--text-secondary); }
+
+        /* REPORT ITEMS */
+        .report-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; background: white; border-radius: var(--radius-sm); margin-bottom: 8px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+        .report-item:hover { border-color: var(--primary-lighter); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .report-item .info { display: flex; flex-direction: column; }
+        .report-item .name { font-weight: 600; font-size: 0.92rem; }
+        .report-item .date { font-size: 0.78rem; color: var(--text-secondary); }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.73rem; font-weight: 600; }
+        .badge-ok { background: #EBF5EE; color: var(--success); }
+        .badge-warn { background: #FFF3E0; color: var(--warning); }
+        .badge-admin { background: #EDE7F6; color: #5E35B1; }
+        .badge-none { background: #FFEBEE; color: var(--danger); }
+
+        /* TEAM CARDS */
+        .team-card { background: white; border-radius: var(--radius); border: 1.5px solid var(--border); margin-bottom: 10px; overflow: hidden; transition: all 0.2s; }
+        .team-card.expanded { border-color: var(--primary-lighter); box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+        .team-card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; cursor: pointer; transition: background 0.2s; }
+        .team-card-header:hover { background: #FAFAF8; }
+        .team-card-left { display: flex; align-items: center; gap: 12px; }
+        .team-card-avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.95rem; color: white; }
+        .team-card-avatar.cat-a { background: var(--primary); }
+        .team-card-avatar.cat-b { background: #5E35B1; }
+        .team-card-avatar.cat-c { background: #E07C24; }
+        .team-card-avatar.cat-d { background: #C0392B; }
+        .team-card-info h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 2px; }
+        .team-card-info .role { font-size: 0.78rem; color: var(--text-secondary); }
+        .team-card-right { display: flex; align-items: center; gap: 10px; }
+        .team-card-arrow { font-size: 0.9rem; color: var(--text-secondary); transition: transform 0.3s; }
+        .team-card.expanded .team-card-arrow { transform: rotate(180deg); }
+        .team-card-metrics { display: flex; gap: 6px; flex-wrap: wrap; }
+        .mini-metric { padding: 3px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; background: #f0f0f0; color: var(--text-secondary); white-space: nowrap; }
+        .mini-metric.met { background: #EBF5EE; color: var(--success); }
+        .mini-metric.unmet { background: #FFF3E0; color: var(--warning); }
+        .team-card-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--border); }
+        .team-card.expanded .team-card-body { display: block; padding-top: 14px; }
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
+        .detail-item { background: #FAFAF8; border-radius: var(--radius-sm); padding: 10px 12px; border: 1px solid #eee; }
+        .detail-item .di-label { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; margin-bottom: 2px; }
+        .detail-item .di-value { font-size: 1rem; font-weight: 700; color: var(--primary); }
+        .detail-item .di-target { font-size: 0.7rem; color: var(--text-secondary); }
+        .qual-section { margin-top: 10px; }
+        .qual-item { margin-bottom: 8px; }
+        .qual-item .qi-label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 2px; }
+        .qual-item .qi-value { font-size: 0.88rem; background: #FAFAF8; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid #eee; white-space: pre-wrap; line-height: 1.5; }
+        .week-tabs { display: flex; gap: 4px; margin-bottom: 10px; flex-wrap: wrap; }
+        .week-tab { padding: 4px 10px; border: 1px solid var(--border); border-radius: 14px; cursor: pointer; font-size: 0.75rem; font-family: inherit; background: white; transition: all 0.2s; }
+        .week-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+        @media (max-width: 480px) { .detail-grid { grid-template-columns: 1fr; } .team-card-metrics { display: none; } }
+
+        /* DETAIL FIELDS */
+        .report-detail-field { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #f0ede7; }
+        .report-detail-field:last-child { border-bottom: none; }
+        .report-detail-field .field-label { font-weight: 600; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 2px; }
+        .report-detail-field .field-value { font-size: 0.92rem; color: var(--text); white-space: pre-wrap; }
+
+        /* DATE RANGE FILTER */
+        .date-range-bar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+        .date-range-bar select, .date-range-bar input { flex: 1; min-width: 120px; }
+        .range-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+        .range-chip { padding: 6px 14px; border: 1.5px solid var(--border); border-radius: 20px; cursor: pointer; font-size: 0.82rem; font-weight: 500; background: white; font-family: inherit; transition: all 0.2s; }
+        .range-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        /* AI SUMMARY */
+        .ai-summary-box { background: linear-gradient(135deg, #EDE7F6 0%, #E8EAF6 100%); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; border: 1px solid #D1C4E9; }
+        .ai-summary-box .title { font-weight: 700; color: #5E35B1; margin-bottom: 8px; font-size: 0.9rem; }
+        .ai-summary-box .content { font-size: 0.88rem; line-height: 1.7; white-space: pre-wrap; }
+        .btn-ai { background: linear-gradient(135deg, #7E57C2, #5E35B1); color: white; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-ai:hover { transform: translateY(-1px); }
+
+        /* PAYMENT */
+        .payment-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
+        .payment-table th, .payment-table td { padding: 8px 10px; border: 1px solid var(--border); text-align: right; }
+        .payment-table th { background: var(--primary); color: white; font-weight: 600; }
+        .payment-table tr:nth-child(even) { background: #FAFAF8; }
+
+        /* TOAST */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--primary); color: white; padding: 12px 24px; border-radius: var(--radius); font-weight: 600; font-size: 0.9rem; box-shadow: var(--shadow-lg); z-index: 1000; transition: transform 0.4s ease; white-space: nowrap; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+
+        /* LOADING */
+        .loading-overlay { position: fixed; inset: 0; background: rgba(248,246,240,0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 200; }
+        .loading-overlay.show { display: flex; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* PROGRESS */
+        .progress-bar-container { background: #E0DDD5; border-radius: 20px; height: 6px; margin: 14px 0 6px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 20px; transition: width 0.5s; }
+        .progress-text { font-size: 0.76rem; color: var(--text-secondary); text-align: center; }
+
+        .empty-state { text-align: center; padding: 30px 20px; color: var(--text-secondary); }
+        .empty-state .icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+        /* FOOTER */
+        .footer { text-align: center; padding: 20px 16px 30px; margin-top: 20px; border-top: 1px solid var(--border); }
+        .footer-logo { height: 32px; margin-bottom: 6px; opacity: 0.8; }
+        .footer-text { font-size: 0.72rem; color: var(--text-secondary); }
+        .back-btn { background: none; border: none; color: var(--primary); font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; margin-bottom: 10px; padding: 6px 0; }
+
+        .edit-badge { background: var(--accent); color: var(--primary); padding: 3px 10px; border-radius: 12px; font-size: 0.72rem; font-weight: 700; margin-right: auto; cursor: pointer; }
+
+        /* RESPONSIVE */
+        @media (max-width: 480px) {
+            .header h1 { font-size: 1rem; }
+            .container { padding: 10px; }
+            .card { padding: 14px; }
+            .nav-btn { padding: 5px 8px; font-size: 0.75rem; }
+            .dash-stats { grid-template-columns: 1fr 1fr; }
+            .days-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER (hidden on login) -->
+<div class="header" id="main-header" style="display:none;">
+    <div class="header-content">
+        <div class="header-right">
+            <img class="header-logo" src="https://raw.githubusercontent.com/ruach-hashmonaim/ruach-hashmonait/main/logo.png" alt="לוגו" onerror="this.style.display='none'">
+            <div>
+                <h1>רוח חשמונאית</h1>
+                <div class="header-user" id="header-user-name"></div>
+            </div>
+        </div>
+        <div class="nav-btns">
+            <button class="nav-btn active" onclick="showScreen('home')" id="nav-home">דיווח</button>
+            <button class="nav-btn" onclick="showScreen('dashboard')" id="nav-dash">דשבורד</button>
+            <button class="nav-btn" onclick="showScreen('payment')" id="nav-pay" style="display:none;">תשלום</button>
+            <button class="btn-logout" onclick="logout()">יציאה</button>
+        </div>
+    </div>
+</div>
+
+<div class="loading-overlay" id="loading"><div class="spinner"></div><p style="margin-top:12px;font-weight:500;color:var(--text-secondary);">טוען...</p></div>
+<div class="toast" id="toast"></div>
+
+<div class="container">
+
+<!-- FILTER WARNING -->
+<div id="filter-warning" style="display:none;background:#FFF3E0;border:2px solid #E07C24;border-radius:12px;padding:16px;margin:16px;text-align:center;direction:rtl;">
+    <div style="font-weight:700;color:#E07C24;font-size:1rem;margin-bottom:8px;">בעיית חיבור</div>
+    <div style="font-size:0.88rem;color:#333;line-height:1.6;">
+        נראה שחלק מהשירותים חסומים על ידי סינון האינטרנט שלך.<br>
+        יש לפתוח בסינון את הדומיינים הבאים:<br>
+        <code style="background:#fff;padding:2px 8px;border-radius:4px;font-size:0.82rem;">firestore.googleapis.com</code><br>
+        <code style="background:#fff;padding:2px 8px;border-radius:4px;font-size:0.82rem;">www.gstatic.com</code><br>
+        <code style="background:#fff;padding:2px 8px;border-radius:4px;font-size:0.82rem;">ruach-hashmonait.firebaseapp.com</code><br>
+        <span style="font-size:0.8rem;color:#888;">או לפנות למנהל הרשת / ספק הסינון</span>
+    </div>
+</div>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div class="screen active" id="screen-login">
+    <div class="login-screen">
+        <img class="login-logo" src="https://raw.githubusercontent.com/ruach-hashmonaim/ruach-hashmonait/main/logo.png" alt="לוגו חטיבה" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect fill=%22%231B4332%22 width=%22100%22 height=%22100%22 rx=%2250%22/><text x=%2250%22 y=%2258%22 text-anchor=%22middle%22 fill=%22%23D4A843%22 font-size=%2230%22 font-weight=%22bold%22>רח</text></svg>'">
+        <h2>רוח חשמונאית</h2>
+        <p class="subtitle">מערכת דיווח שבועי — עמותת רוח החשמונאים</p>
+        <div class="card" style="text-align: right;">
+            <div class="form-group">
+                <label>בחר שם</label>
+                <select id="login-name">
+                    <option value="">-- בחר איש צוות --</option>
+                    <option value="יצחק">יצחק (מנהל)</option>
+                    <option value="הרב דוד אורבך">הרב דוד אורבך</option>
+                    <option value="הרב מנחם וולך">הרב מנחם וולך</option>
+                    <option value="הרב יאיר שילוני">הרב יאיר שילוני</option>
+                    <option value="הרב ידידיה קובן">הרב ידידיה קובן</option>
+                    <option value="הרב אמיתי אייזיקוביץ">הרב אמיתי אייזיקוביץ</option>
+                    <option value="הרב שלמה גיטלר">הרב שלמה גיטלר</option>
+                    <option value="הרב יוחנן קליימן">הרב יוחנן קליימן</option>
+                    <option value="הרב חיים קריאף">הרב חיים קריאף</option>
+                    <option value="הרב משה דוד רוטמן">הרב משה דוד רוטמן</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>סיסמה</label>
+                <input type="password" id="login-pin" class="pin-input" placeholder="••••" maxlength="20" onkeydown="if(event.key==='Enter')doLogin()">
+            </div>
+            <button class="btn-primary" onclick="doLogin()" style="margin-top:8px;">כניסה</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ HOME SCREEN ============ -->
+<div class="screen" id="screen-home">
+    <div class="card">
+        <div class="card-title"><div class="icon">📅</div> שבוע דיווח</div>
+        <div class="form-group">
+            <div class="week-picker">
+                <button onclick="changeWeek(-1)">&#8594;</button>
+                <div class="week-display" id="week-display">--</div>
+                <button onclick="changeWeek(1)">&#8592;</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="person-type-indicator" class="card" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:var(--accent);"></div>
+            <span id="person-type-text" style="font-weight:600;font-size:0.88rem;"></span>
+        </div>
+    </div>
+
+    <!-- FORM A: ר"מים פלוגתיים -->
+    <div id="form-a" style="display:none;">
+        <div class="card">
+            <div class="card-title"><div class="icon">📊</div> מדדים כמותיים</div>
+            <div class="form-group">
+                <label>סה"כ שעות פעילות השבוע</label><span class="target-badge">מינימום: 18</span>
+                <input type="number" id="a-hours" min="0" max="60" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>ימי נוכחות בבסיס/בשטח</label><span class="target-badge">יעד: 3 ימים</span>
+                <div class="days-grid" id="a-days">
+                    <div class="day-chip" data-day="ראשון" onclick="toggleChip(this)">ראשון</div>
+                    <div class="day-chip" data-day="שני" onclick="toggleChip(this)">שני</div>
+                    <div class="day-chip" data-day="שלישי" onclick="toggleChip(this)">שלישי</div>
+                    <div class="day-chip" data-day="רביעי" onclick="toggleChip(this)">רביעי</div>
+                    <div class="day-chip" data-day="חמישי" onclick="toggleChip(this)">חמישי</div>
+                    <div class="day-chip" data-day="שישי" onclick="toggleChip(this)">שישי</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>נוכחות בשעות לימוד</label><span class="target-badge">יעד: 3-4 שעות</span>
+                <input type="number" id="a-teaching-hours" min="0" max="40" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>נוכחות בשעות ת"ש השבוע</label><span class="target-badge">יעד: 2 שעות</span>
+                <input type="number" id="a-tash-hours" min="0" max="20" placeholder="0" step="0.5">
+            </div>
+            <div class="form-group">
+                <label>מספר שיחות אישיות שבוצעו</label><span class="target-badge">יעד חודשי: 16</span>
+                <input type="number" id="a-conversations" min="0" max="50" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label>הערות למדדים כמותיים</label>
+                <textarea id="a-quant-notes" placeholder="הערות, הסברים, הבהרות לנתונים הכמותיים..."></textarea>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title"><div class="icon">📝</div> דיווח מהותי</div>
+            <div class="form-group"><label>נושאי הלימוד השבוע</label><textarea id="a-topics" placeholder="נושאי לימוד עיקריים..."></textarea></div>
+            <div class="form-group"><label>אווירה ומצב רוח בפלוגה</label><textarea id="a-mood" placeholder="תיאור האווירה הכללית..."></textarea></div>
+            <div class="form-group"><label>דילמות/אתגרים שעלו</label><textarea id="a-challenges" placeholder="דילמות, אתגרים, וסוגיות..."></textarea></div>
+            <div class="form-group"><label>הערות נוספות</label><textarea id="a-notes" placeholder="נקודות נוספות הדורשות התייחסות..."></textarea></div>
+        </div>
+    </div>
+
+    <!-- FORM B: הרב יוחנן קליימן -->
+    <div id="form-b" style="display:none;">
+        <div class="card">
+            <div class="card-title"><div class="icon">📊</div> מדדים כמותיים</div>
+            <div class="form-group"><label>שעות ליווי ר"מים (ישיבות ופ.ע)</label><input type="number" id="b-accompany-hours" min="0" max="60" placeholder="0" step="0.5"></div>
+            <div class="form-group"><label>כמות סיורי שטח ונוכחות בבסיסים</label><input type="number" id="b-field-visits" min="0" max="30" placeholder="0"></div>
+            <div class="form-group"><label>שעות הדרכת חתנים</label><input type="number" id="b-groom-hours" min="0" max="30" placeholder="0" step="0.5"></div>
+            <div class="form-group"><label>שעות טיפול במקרי קצה ודילמות</label><input type="number" id="b-edge-cases" min="0" max="30" placeholder="0" step="0.5"></div>
+            <div class="form-group"><label>הערות למדדים כמותיים</label><textarea id="b-quant-notes" placeholder="הערות, הסברים..."></textarea></div>
+        </div>
+        <div class="card">
+            <div class="card-title"><div class="icon">📝</div> דיווח מהותי</div>
+            <div class="form-group"><label>תובנות מסיורי השטח השבוע</label><textarea id="b-insights" placeholder="תובנות עיקריות..."></textarea></div>
+            <div class="form-group"><label>סטטוס הדרכת חתנים נוכחי</label><textarea id="b-groom-status" placeholder="סטטוס עדכני..."></textarea></div>
+            <div class="form-group"><label>זיהוי אתגרים רוחביים בשטח</label><textarea id="b-field-challenges" placeholder="אתגרים רוחביים..."></textarea></div>
+            <div class="form-group"><label>הערות נוספות</label><textarea id="b-notes" placeholder="נקודות נוספות הדורשות התייחסות..."></textarea></div>
+        </div>
+    </div>
+
+    <!-- FORM C: הרב חיים קריאף -->
+    <div id="form-c" style="display:none;">
+        <div class="card">
+            <div class="card-title"><div class="icon">📊</div> מדדים כמותיים <span style="font-size:0.73rem;color:var(--danger);font-weight:500;margin-right:auto;">(קריטי לחישוב שכר)</span></div>
+            <div class="form-group"><label>כמות שיעורי חוסן ואמונה שהועברו</label><span class="target-badge">יעד שבועי: כ-15</span><input type="number" id="c-lessons-count" min="0" max="30" placeholder="0"></div>
+            <div class="form-group"><label>מחלקות / גורמים שקיבלו מענה השבוע</label><textarea id="c-depts-text" placeholder="פרט אילו מחלקות או גורמים קיבלו מענה..."></textarea></div>
+            <div class="form-group"><label>הערות למדדים כמותיים</label><textarea id="c-quant-notes" placeholder="הערות, הסברים..."></textarea></div>
+        </div>
+        <div class="card">
+            <div class="card-title"><div class="icon">📝</div> דיווח מהותי</div>
+            <div class="form-group"><label>הנושאים שהועברו בשיעורים השבוע</label><textarea id="c-topics" placeholder="נושאים עיקריים..."></textarea></div>
+            <div class="form-group"><label>מדד החוסן והרוח בקרב הלוחמים</label><textarea id="c-resilience" placeholder="הערכת מצב..."></textarea></div>
+            <div class="form-group"><label>הערות נוספות</label><textarea id="c-notes" placeholder="נקודות נוספות הדורשות התייחסות..."></textarea></div>
+        </div>
+    </div>
+
+    <!-- FORM D: הרב משה דוד רוטמן -->
+    <div id="form-d" style="display:none;">
+        <div class="card">
+            <div class="card-title"><div class="icon">📋</div> סטטוס תפוקות שבועי</div>
+            <div class="form-group"><label>ניהול אסטרטגי והובלת צוות הר"מים</label><textarea id="d-strategic" placeholder="פעולות ניהול והובלה..."></textarea></div>
+            <div class="form-group"><label>פגישות וישיבות הנהלה שהתקיימו</label><textarea id="d-meetings" placeholder="רשימת פגישות..."></textarea></div>
+            <div class="form-group"><label>סטטוס התקדמות מול גורמי צבא/חוץ</label><textarea id="d-army-status" placeholder="סטטוס עדכני..."></textarea></div>
+            <div class="form-group"><label>התקדמות בבניית תוכניות הליווי</label><textarea id="d-programs" placeholder="סטטוס בניית תוכניות..."></textarea></div>
+        </div>
+        <div class="card">
+            <div class="card-title"><div class="icon">📝</div> דיווח מהותי</div>
+            <div class="form-group"><label>עמידה ביעדי התוכנית, נקודות לשימור ולשיפור</label><textarea id="d-goals" placeholder="הערכת עמידה ביעדים..."></textarea></div>
+            <div class="form-group"><label>הערות נוספות</label><textarea id="d-notes" placeholder="נקודות נוספות הדורשות התייחסות..."></textarea></div>
+        </div>
+    </div>
+
+    <!-- SUBMIT -->
+    <div id="submit-area" style="display:none; margin-top:8px;">
+        <div class="progress-bar-container"><div class="progress-bar" id="form-progress" style="width:0%"></div></div>
+        <div class="progress-text" id="progress-text">מלא/י את השדות</div>
+        <button class="btn-primary" id="btn-submit" onclick="submitReport()" style="margin-top:10px;">שלח דיווח שבועי</button>
+    </div>
+</div>
+
+<!-- ============ DASHBOARD SCREEN ============ -->
+<div class="screen" id="screen-dashboard">
+    <h2 style="font-size:1.2rem;color:var(--primary);margin-bottom:14px;">דשבורד <span id="dash-scope-label" style="font-size:0.85rem;color:var(--text-secondary);"></span></h2>
+
+    <div class="range-chips" id="range-chips">
+        <button class="range-chip active" onclick="setRange('week',this)">שבועי</button>
+        <button class="range-chip" onclick="setRange('month',this)">חודשי</button>
+        <button class="range-chip" onclick="setRange('custom',this)">טווח מותאם</button>
+        <button class="range-chip" onclick="setRange('all',this)">הכל</button>
+    </div>
+
+    <div id="dash-week-nav" class="card" style="margin-bottom:10px;">
+        <div class="week-picker">
+            <button onclick="changeDashWeek(-1)">&#8594;</button>
+            <div class="week-display" id="dash-week-display">--</div>
+            <button onclick="changeDashWeek(1)">&#8592;</button>
+        </div>
+    </div>
+
+    <div id="dash-month-nav" class="card" style="display:none;margin-bottom:10px;">
+        <div class="form-group" style="margin-bottom:0;"><input type="month" id="dash-month-picker" onchange="loadDashboard()"></div>
+    </div>
+
+    <div id="custom-range" style="display:none;" class="card">
+        <div class="date-range-bar">
+            <input type="date" id="range-from" onchange="loadDashboard()">
+            <span style="font-weight:600;">עד</span>
+            <input type="date" id="range-to" onchange="loadDashboard()">
+        </div>
+    </div>
+
+    <div class="card" id="dash-filter-card">
+        <div class="date-range-bar">
+            <select id="dash-filter-person" onchange="loadDashboard()">
+                <option value="">כל אנשי הצוות</option>
+                <option value="הרב דוד אורבך">הרב דוד אורבך</option>
+                <option value="הרב מנחם וולך">הרב מנחם וולך</option>
+                <option value="הרב יאיר שילוני">הרב יאיר שילוני</option>
+                <option value="הרב ידידיה קובן">הרב ידידיה קובן</option>
+                <option value="הרב אמיתי אייזיקוביץ">הרב אמיתי אייזיקוביץ</option>
+                <option value="הרב שלמה גיטלר">הרב שלמה גיטלר</option>
+                <option value="הרב יוחנן קליימן">הרב יוחנן קליימן</option>
+                <option value="הרב חיים קריאף">הרב חיים קריאף</option>
+                <option value="הרב משה דוד רוטמן">הרב משה דוד רוטמן</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="dash-stats" id="dash-stats">
+        <div class="dash-stat"><div class="number" id="dash-total">0</div><div class="label">דיווחים</div></div>
+        <div class="dash-stat"><div class="number" id="dash-pending">0</div><div class="label">טרם דיווחו</div></div>
+        <div class="dash-stat"><div class="number" id="dash-hours-avg">0</div><div class="label">ממוצע שעות ר"מים</div></div>
+        <div class="dash-stat"><div class="number" id="dash-lessons">0</div><div class="label">שיעורי חוסן</div></div>
+    </div>
+
+    <div style="margin-bottom:14px;" id="dash-ai-btn">
+        <button class="btn-ai" onclick="generateAISummary()">סיכום AI לתקופה</button>
+    </div>
+    <div id="ai-summary-container"></div>
+
+    <div id="dash-team-cards"></div>
+</div>
+
+<!-- ============ PAYMENT SCREEN ============ -->
+<div class="screen" id="screen-payment">
+    <h2 style="font-size:1.2rem;color:var(--primary);margin-bottom:14px;">הפקת דו"ח ביצוע ודרישת תשלום</h2>
+    <div class="card">
+        <div class="card-title"><div class="icon">📄</div> פרמטרים</div>
+        <div class="form-group"><label>חודש דיווח</label><input type="month" id="pay-month"></div>
+        <div class="form-group"><label>סכום חודשי ר"מים פלוגתיים (₪)</label><input type="number" id="pay-rm-total" value="33000"></div>
+        <div class="form-group"><label>שכר חודשי — הרב רוטמן (₪)</label><input type="number" id="pay-rotman" value="15000"></div>
+        <div class="form-group"><label>שכר חודשי — הרב קליימן (₪)</label><input type="number" id="pay-kleiman" value="10000"></div>
+        <div class="form-group"><label>תעריף לשיעור חוסן — הרב קריאף (₪)</label><input type="number" id="pay-rate-lesson" value="170"></div>
+        <button class="btn-primary" onclick="generatePaymentPreview()" style="margin-top:8px;">תצוגה מקדימה</button>
+    </div>
+    <div id="payment-result"></div>
+    <div id="payment-actions" style="display:none;margin-top:10px;">
+        <div style="display:flex;gap:8px;">
+            <button class="btn-secondary" onclick="downloadPaymentDocx()" style="flex:1;">הורד Word (.docx)</button>
+            <button class="btn-secondary" onclick="printPaymentReport()" style="flex:1;">הדפס / PDF</button>
+        </div>
+    </div>
+</div>
+
+<!-- FOOTER -->
+<div class="footer">
+    <img class="footer-logo" src="https://raw.githubusercontent.com/ruach-hashmonaim/ruach-hashmonait/main/iab-logo.png" alt="IAB" onerror="this.style.display='none'">
+    <div class="footer-text">פותח ע"י IAB — Smart AI Solutions</div>
+</div>
+
+</div><!-- /container -->
+
+<script>
+// ============================================================
+// CONFIG & STATE
+// ============================================================
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDpuUq6hpSV6MJv9-7-YMJDEr-tmSWuy9c",
+    authDomain: "ruach-hashmonait.firebaseapp.com",
+    projectId: "ruach-hashmonait",
+    storageBucket: "ruach-hashmonait.firebasestorage.app",
+    messagingSenderId: "996341650604",
+    appId: "1:996341650604:web:6b942f30a35c5e865ebb09",
+    measurementId: "G-K4TYMQSKBR"
+};
+
+let db = null;
+let currentUser = null; // { name, isAdmin }
+let currentWeekStart = getWeekStart(new Date());
+let dashRange = 'week';
+let dashWeekStart = getWeekStart(new Date());
+let editingReportId = null;
+
+const TEAM_CATEGORIES = {
+    'a': ['הרב דוד אורבך','הרב מנחם וולך','הרב יאיר שילוני','הרב ידידיה קובן','הרב אמיתי אייזיקוביץ','הרב שלמה גיטלר'],
+    'b': ['הרב יוחנן קליימן'],
+    'c': ['הרב חיים קריאף'],
+    'd': ['הרב משה דוד רוטמן']
+};
+const ALL_TEAM = Object.values(TEAM_CATEGORIES).flat();
+const CATEGORY_NAMES = { 'a':'ר"מ פלוגתי', 'b':'מפקח ומלווה', 'c':'מרצה חוסן ואמונה', 'd':'מנהל התוכנית' };
+
+// Default passwords — will be hashed before storing
+const DEFAULT_PINS = {};
+ALL_TEAM.forEach(n => DEFAULT_PINS[n] = { pin: '1234', isAdmin: false });
+DEFAULT_PINS['הרב משה דוד רוטמן'] = { pin: '123456', isAdmin: true };
+DEFAULT_PINS['יצחק'] = { pin: '123456', isAdmin: true };
+
+// Login rate limiting
+const loginAttempts = {};
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 120000; // 2 minutes
+
+function checkRateLimit(name) {
+    const rec = loginAttempts[name];
+    if (!rec) return true;
+    if (rec.lockedUntil && Date.now() < rec.lockedUntil) {
+        const secs = Math.ceil((rec.lockedUntil - Date.now()) / 1000);
+        showToast('נחסמת ל-' + secs + ' שניות בגלל ניסיונות כושלים');
+        return false;
+    }
+    if (rec.lockedUntil && Date.now() >= rec.lockedUntil) {
+        loginAttempts[name] = { count: 0 };
+    }
+    return true;
+}
+
+function recordFailedAttempt(name) {
+    if (!loginAttempts[name]) loginAttempts[name] = { count: 0 };
+    loginAttempts[name].count++;
+    if (loginAttempts[name].count >= MAX_ATTEMPTS) {
+        loginAttempts[name].lockedUntil = Date.now() + LOCKOUT_MS;
+        showToast('יותר מדי ניסיונות — נחסמת לשתי דקות');
+    }
+}
+
+function clearAttempts(name) { delete loginAttempts[name]; }
+
+// SHA-256 hash helper
+async function hashPin(pin) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(pin + '_ruach_salt_2024');
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function initApp() {
+    try {
+        if (typeof firebase === 'undefined') {
+            document.getElementById('filter-warning').style.display = 'block';
+            showToast('שגיאה בטעינת המערכת — בדוק את הסינון');
+            return;
+        }
+        if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+        initDefaultUsers();
+    } catch(e) {
+        console.error('Firebase init error:', e);
+        document.getElementById('filter-warning').style.display = 'block';
+        showToast('שגיאה בחיבור לשרת — בדוק את חיבור האינטרנט');
+    }
+}
+
+async function initDefaultUsers() {
+    try {
+        for (const [name, data] of Object.entries(DEFAULT_PINS)) {
+            const hashedPin = await hashPin(data.pin);
+            const doc = await db.collection('users').doc(name).get();
+            if (!doc.exists) {
+                // New user — store both plain + hash for backward compatibility
+                await db.collection('users').doc(name).set({ pin: data.pin, pinHash: hashedPin, isAdmin: data.isAdmin });
+            } else {
+                const existing = doc.data();
+                // Add hash alongside existing plain pin (keep both!)
+                if (existing.pin && !existing.pinHash) {
+                    const migratedHash = await hashPin(existing.pin);
+                    await db.collection('users').doc(name).update({ pinHash: migratedHash });
+                }
+                // Restore plain pin if it was deleted during migration
+                if (!existing.pin && existing.pinHash) {
+                    await db.collection('users').doc(name).update({ pin: data.pin });
+                }
+                // Sync admin status & pin for admins
+                if (data.isAdmin) {
+                    await db.collection('users').doc(name).update({ pin: data.pin, pinHash: hashedPin, isAdmin: true });
+                }
+            }
+        }
+    } catch(e) { console.warn('Users init:', e); }
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+async function doLogin() {
+    const name = document.getElementById('login-name').value;
+    const pin = document.getElementById('login-pin').value;
+    if (!name || !pin) { showToast('יש לבחור שם ולהזין סיסמה'); return; }
+
+    if (!checkRateLimit(name)) return;
+
+    showLoading(true);
+    try {
+        if (!db) { showToast('אין חיבור לשרת — בדוק את חיבור האינטרנט או את הסינון'); showLoading(false); return; }
+        const doc = await db.collection('users').doc(name).get();
+        if (!doc.exists) { showToast('משתמש לא נמצא'); showLoading(false); return; }
+        const userData = doc.data();
+
+        // Support both hashed and legacy plain pins
+        const inputHash = await hashPin(pin);
+        let pinMatch = false;
+        if (userData.pinHash) {
+            pinMatch = (userData.pinHash === inputHash);
+        } else if (userData.pin) {
+            // Legacy plain text — add hash alongside (keep plain for backward compat)
+            pinMatch = (userData.pin === pin);
+            if (pinMatch) {
+                await db.collection('users').doc(name).update({ pinHash: inputHash });
+            }
+        }
+
+        if (!pinMatch) {
+            recordFailedAttempt(name);
+            showToast('סיסמה שגויה');
+            showLoading(false);
+            return;
+        }
+
+        clearAttempts(name);
+        currentUser = { name, isAdmin: userData.isAdmin || false };
+        localStorage.setItem('ruach-user', JSON.stringify(currentUser));
+        onLoginSuccess();
+    } catch(e) {
+        console.error('Login error:', e);
+        if (e.code === 'unavailable' || e.code === 'resource-exhausted' || e.message?.includes('network') || e.message?.includes('Failed to fetch')) {
+            document.getElementById('filter-warning').style.display = 'block';
+            showToast('בעיית רשת — בדוק את חיבור האינטרנט או הסינון');
+        } else {
+            showToast('שגיאה בהתחברות — נסה שוב');
+        }
+    }
+    showLoading(false);
+}
+
+function onLoginSuccess() {
+    document.getElementById('main-header').style.display = 'block';
+    document.getElementById('header-user-name').textContent = currentUser.name + (currentUser.isAdmin ? ' (מנהל)' : '');
+    document.getElementById('nav-pay').style.display = currentUser.isAdmin ? 'inline-block' : 'none';
+    showScreen('home');
+    setupFormForUser();
+    updateWeekDisplay();
+}
+
+function logout() {
+    currentUser = null;
+    localStorage.removeItem('ruach-user');
+    document.getElementById('main-header').style.display = 'none';
+    document.getElementById('login-pin').value = '';
+    showScreen('login');
+}
+
+function tryAutoLogin() {
+    const saved = localStorage.getItem('ruach-user');
+    if (saved) {
+        try {
+            currentUser = JSON.parse(saved);
+            onLoginSuccess();
+            return;
+        } catch(e) {}
+    }
+    showScreen('login');
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+
+    if (name === 'login') {
+        document.getElementById('screen-login').classList.add('active');
+    } else if (name === 'home') {
+        document.getElementById('screen-home').classList.add('active');
+        document.getElementById('nav-home').classList.add('active');
+    } else if (name === 'dashboard') {
+        document.getElementById('screen-dashboard').classList.add('active');
+        document.getElementById('nav-dash').classList.add('active');
+        updateDashWeekDisplay();
+        loadDashboard();
+    } else if (name === 'payment') {
+        document.getElementById('screen-payment').classList.add('active');
+        document.getElementById('nav-pay').classList.add('active');
+    }
+}
+
+// ============================================================
+// FORM SETUP
+// ============================================================
+function setupFormForUser() {
+    if (!currentUser) return;
+    const cat = getPersonCategory(currentUser.name);
+    ['form-a','form-b','form-c','form-d'].forEach(id => document.getElementById(id).style.display = 'none');
+
+    if (cat) {
+        document.getElementById('form-' + cat).style.display = 'block';
+        document.getElementById('submit-area').style.display = 'block';
+        document.getElementById('person-type-indicator').style.display = 'block';
+        document.getElementById('person-type-text').textContent = `סוג דיווח: ${CATEGORY_NAMES[cat]}`;
+    }
+}
+
+function getPersonCategory(name) {
+    for (const [cat, names] of Object.entries(TEAM_CATEGORIES)) {
+        if (names.includes(name)) return cat;
+    }
+    return null;
+}
+
+// ============================================================
+// WEEK
+// ============================================================
+function getWeekStart(d) { const date = new Date(d); date.setDate(date.getDate() - date.getDay()); date.setHours(0,0,0,0); return date; }
+function formatDate(d) { return d.toLocaleDateString('he-IL',{day:'numeric',month:'numeric',year:'numeric'}); }
+function getWeekKey(d) { return d.toISOString().split('T')[0]; }
+function changeWeek(delta) { currentWeekStart = new Date(currentWeekStart); currentWeekStart.setDate(currentWeekStart.getDate() + delta*7); updateWeekDisplay(); }
+
+function getHebrewDate(date) {
+    try { if (typeof hebcal !== 'undefined' && hebcal.HDate) { return new hebcal.HDate(date).renderGematriya(true); } } catch(e) {}
+    return '';
+}
+
+function updateWeekDisplay() {
+    const end = new Date(currentWeekStart); end.setDate(end.getDate()+6);
+    const greg = `${formatDate(currentWeekStart)} - ${formatDate(end)}`;
+    const hs = getHebrewDate(currentWeekStart), he = getHebrewDate(end);
+    const heb = (hs && he) ? `${hs} - ${he}` : '';
+    document.getElementById('week-display').innerHTML = greg + (heb ? `<br><span style="font-size:0.8rem;color:var(--primary-lighter);font-weight:500;">${heb}</span>` : '');
+}
+
+// ============================================================
+// CHIPS
+// ============================================================
+function toggleChip(el) { el.classList.toggle('selected'); updateProgress(); }
+
+// ============================================================
+// PROGRESS
+// ============================================================
+function updateProgress() {
+    if (!currentUser) return;
+    const cat = getPersonCategory(currentUser.name);
+    if (!cat) return;
+    let filled=0, total=0;
+    if (cat==='a') { total=9; if(gv('a-hours'))filled++; if(qs('#a-days .selected'))filled++; if(gv('a-teaching-hours'))filled++; if(gv('a-tash-hours'))filled++; if(gv('a-conversations'))filled++; if(gt('a-topics'))filled++; if(gt('a-mood'))filled++; if(gt('a-challenges'))filled++; if(gt('a-quant-notes')||gt('a-notes'))filled++; }
+    else if (cat==='b') { total=8; if(gv('b-accompany-hours'))filled++; if(gv('b-field-visits'))filled++; if(gv('b-groom-hours'))filled++; if(gv('b-edge-cases'))filled++; if(gt('b-insights'))filled++; if(gt('b-groom-status'))filled++; if(gt('b-field-challenges'))filled++; if(gt('b-quant-notes')||gt('b-notes'))filled++; }
+    else if (cat==='c') { total=5; if(gv('c-lessons-count'))filled++; if(gt('c-depts-text'))filled++; if(gt('c-topics'))filled++; if(gt('c-resilience'))filled++; if(gt('c-quant-notes')||gt('c-notes'))filled++; }
+    else if (cat==='d') { total=6; if(gt('d-strategic'))filled++; if(gt('d-meetings'))filled++; if(gt('d-army-status'))filled++; if(gt('d-programs'))filled++; if(gt('d-goals'))filled++; if(gt('d-notes'))filled++; }
+    const pct = total>0 ? Math.round(filled/total*100) : 0;
+    document.getElementById('form-progress').style.width = pct+'%';
+    document.getElementById('progress-text').textContent = `${filled} מתוך ${total} שדות (${pct}%)`;
+}
+function gv(id) { const e=document.getElementById(id); return e&&e.value; }
+function gt(id) { const e=document.getElementById(id); return e&&e.value.trim(); }
+function qs(sel) { return document.querySelector(sel); }
+document.addEventListener('input', updateProgress);
+
+// ============================================================
+// COLLECT DATA
+// ============================================================
+function collectFormData(cat) {
+    const data = { person: currentUser.name, category: cat, categoryName: CATEGORY_NAMES[cat], weekStart: getWeekKey(currentWeekStart), weekDisplay: document.getElementById('week-display').innerText, timestamp: new Date().toISOString() };
+    if (cat==='a') {
+        data.totalHours=parseFloat(gv('a-hours'))||0; data.presenceDays=Array.from(document.querySelectorAll('#a-days .selected')).map(e=>e.dataset.day);
+        data.teachingHours=parseFloat(gv('a-teaching-hours'))||0; data.tashHours=parseFloat(gv('a-tash-hours'))||0; data.personalConversations=parseInt(gv('a-conversations'))||0;
+        data.quantNotes=gt('a-quant-notes'); data.topics=gt('a-topics'); data.mood=gt('a-mood'); data.challenges=gt('a-challenges'); data.notes=gt('a-notes');
+        data.targets={ hours:{value:data.totalHours,target:18,met:data.totalHours>=18}, days:{value:data.presenceDays.length,target:3,met:data.presenceDays.length>=3}, teaching:{value:data.teachingHours,target:3,met:data.teachingHours>=3}, tash:{value:data.tashHours,target:2,met:data.tashHours>=2} };
+    } else if (cat==='b') {
+        data.accompanyHours=parseFloat(gv('b-accompany-hours'))||0; data.fieldVisits=parseInt(gv('b-field-visits'))||0; data.groomHours=parseFloat(gv('b-groom-hours'))||0; data.edgeCaseHours=parseFloat(gv('b-edge-cases'))||0;
+        data.quantNotes=gt('b-quant-notes'); data.insights=gt('b-insights'); data.groomStatus=gt('b-groom-status'); data.fieldChallenges=gt('b-field-challenges'); data.notes=gt('b-notes');
+    } else if (cat==='c') {
+        data.lessonsCount=parseInt(gv('c-lessons-count'))||0; data.deptsText=gt('c-depts-text'); data.quantNotes=gt('c-quant-notes'); data.topics=gt('c-topics'); data.resilience=gt('c-resilience'); data.notes=gt('c-notes');
+        data.targets={ lessons:{value:data.lessonsCount,target:15,met:data.lessonsCount>=15} };
+    } else if (cat==='d') {
+        data.strategic=gt('d-strategic'); data.meetings=gt('d-meetings'); data.armyStatus=gt('d-army-status'); data.programs=gt('d-programs'); data.goals=gt('d-goals'); data.notes=gt('d-notes');
+    }
+    return data;
+}
+
+// ============================================================
+// SUBMIT
+// ============================================================
+async function submitReport() {
+    if (!currentUser) return;
+    const cat = getPersonCategory(currentUser.name);
+    const data = collectFormData(cat);
+    document.getElementById('btn-submit').disabled = true;
+    showLoading(true);
+    try {
+        const docId = editingReportId || `${data.person}_${data.weekStart}`;
+        await db.collection('weekly-reports').doc(docId).set(data);
+        showToast(editingReportId ? 'הדיווח עודכן בהצלחה! ✓' : 'הדיווח נשמר בהצלחה! ✓');
+        editingReportId = null;
+        resetForm();
+    } catch(e) {
+        console.error('Save error:', e);
+        showToast('שגיאה בשמירה');
+    }
+    document.getElementById('btn-submit').disabled = false;
+    showLoading(false);
+}
+
+function resetForm() {
+    document.querySelectorAll('input[type="number"]').forEach(e=>e.value='');
+    document.querySelectorAll('#screen-home textarea').forEach(e=>e.value='');
+    document.querySelectorAll('.day-chip.selected').forEach(e=>e.classList.remove('selected'));
+    updateProgress();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+async function loadDashboard() {
+    if (!db) return;
+    const isAdmin = currentUser && currentUser.isAdmin;
+
+    // Show/hide admin-only elements
+    document.getElementById('dash-filter-card').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('dash-ai-btn').style.display = isAdmin ? 'block' : 'none';
+    document.getElementById('dash-scope-label').textContent = isAdmin ? '(כל הצוות)' : `(${currentUser.name})`;
+
+    const filterPerson = isAdmin ? document.getElementById('dash-filter-person').value : '';
+    let reports = [];
+    showLoading(true);
+
+    try {
+        let query = db.collection('weekly-reports').orderBy('timestamp','desc').limit(200);
+        const snap = await query.get();
+        reports = snap.docs.map(d => ({id:d.id,...d.data()}));
+    } catch(e) { console.error(e); showLoading(false); return; }
+
+    // Filter by person (non-admin only sees self)
+    if (!isAdmin) {
+        reports = reports.filter(r => r.person === currentUser.name);
+    } else if (filterPerson) {
+        reports = reports.filter(r => r.person === filterPerson);
+    }
+
+    // Filter by date range
+    const {from, to} = getDateRange();
+    if (from && to) {
+        reports = reports.filter(r => r.weekStart >= from && r.weekStart <= to);
+    }
+
+    // Stats
+    const catA = reports.filter(r => r.category==='a');
+    const avgH = catA.length ? Math.round(catA.reduce((s,r)=>s+(r.totalHours||0),0)/catA.length) : 0;
+    const catC = reports.find(r => r.category==='c');
+    document.getElementById('dash-total').textContent = reports.length;
+    // "Pending" only makes sense for admin; for regular user show 0 or hide
+    if (isAdmin) {
+        document.getElementById('dash-pending').textContent = Math.max(0, ALL_TEAM.length - reports.length);
+        document.getElementById('dash-pending').parentElement.style.display = '';
+    } else {
+        document.getElementById('dash-pending').parentElement.style.display = 'none';
+    }
+    document.getElementById('dash-hours-avg').textContent = avgH;
+    document.getElementById('dash-lessons').textContent = catC ? catC.lessonsCount||0 : 0;
+
+    // Group reports by person
+    const byPerson = {};
+    reports.forEach(r => { if (!byPerson[r.person]) byPerson[r.person]=[]; byPerson[r.person].push(r); });
+
+    window._dashReports = reports;
+    const listEl = document.getElementById('dash-team-cards');
+    document.getElementById('dash-stats').style.display = 'grid';
+
+    if (!reports.length) { listEl.innerHTML = '<div class="empty-state"><div class="icon">📭</div><p>אין דיווחים להצגה</p></div>'; showLoading(false); return; }
+
+    // Build team cards — one per person
+    const teamOrder = isAdmin ? ALL_TEAM : [currentUser.name];
+    let cardsHTML = '';
+    teamOrder.forEach(name => {
+        const pReports = byPerson[name] || [];
+        const cat = getPersonCategory(name);
+        if (!cat) return;
+        const initials = name.replace('הרב ','').split(' ').map(w=>w[0]).join('');
+        const hasReport = pReports.length > 0;
+        const latestR = pReports[0]; // already sorted by timestamp desc
+
+        // Build mini metrics for header
+        let metricsHTML = '';
+        let statusBadge = '';
+        if (!hasReport) {
+            statusBadge = '<span class="badge badge-none">לא דיווח</span>';
+        } else if (cat === 'a' && latestR) {
+            const t = latestR.targets || {};
+            metricsHTML += miniM('שעות', latestR.totalHours, 18, t.hours?.met);
+            metricsHTML += miniM('ימים', latestR.presenceDays?.length, 3, t.days?.met);
+            metricsHTML += miniM('לימוד', latestR.teachingHours, 3, t.teaching?.met);
+            metricsHTML += miniM('שיחות', latestR.personalConversations, null, null);
+            statusBadge = t.hours?.met && t.days?.met && t.teaching?.met ? '<span class="badge badge-ok">תקין</span>' : '<span class="badge badge-warn">חלקי</span>';
+        } else if (cat === 'b' && latestR) {
+            metricsHTML += miniM('ליווי', latestR.accompanyHours, null, null);
+            metricsHTML += miniM('סיורים', latestR.fieldVisits, null, null);
+            statusBadge = '<span class="badge badge-ok">דיווח</span>';
+        } else if (cat === 'c' && latestR) {
+            metricsHTML += miniM('שיעורים', latestR.lessonsCount, 15, latestR.targets?.lessons?.met);
+            statusBadge = '<span class="badge badge-ok">דיווח</span>';
+        } else if (cat === 'd') {
+            statusBadge = '<span class="badge badge-ok">דיווח</span>';
+        }
+
+        // Build expandable body with week tabs + detail
+        let bodyHTML = '';
+        if (pReports.length > 0) {
+            bodyHTML += `<div class="week-tabs" id="wtabs-${name.replace(/\s/g,'')}">`;
+            pReports.forEach((r,wi) => {
+                bodyHTML += `<button class="week-tab ${wi===0?'active':''}" onclick="switchWeekTab('${name.replace(/'/g,"\\'")}',${wi},this)">${r.weekDisplay||r.weekStart}</button>`;
+            });
+            bodyHTML += '</div>';
+            bodyHTML += `<div id="wdetail-${name.replace(/\s/g,'')}">${renderReportBody(pReports[0], cat)}</div>`;
+            if (currentUser.isAdmin) {
+                bodyHTML += `<div style="margin-top:10px;" id="wedit-${name.replace(/\s/g,'')}"><button class="btn-secondary btn-sm" onclick="editReportFromDash('${name.replace(/'/g,"\\'")}',0)">ערוך דיווח זה</button></div>`;
+            }
+        } else {
+            bodyHTML = '<div style="padding:10px;color:var(--text-secondary);text-align:center;">אין דיווחים בתקופה הנבחרת</div>';
+        }
+
+        cardsHTML += `<div class="team-card" id="tc-${name.replace(/\s/g,'')}">
+            <div class="team-card-header" onclick="toggleTeamCard('${name.replace(/\s/g,'')}')">
+                <div class="team-card-left">
+                    <div class="team-card-avatar cat-${cat}">${initials}</div>
+                    <div class="team-card-info"><h3>${name}</h3><div class="role">${CATEGORY_NAMES[cat]} · ${pReports.length} דיווחים</div></div>
+                </div>
+                <div class="team-card-right">
+                    <div class="team-card-metrics">${metricsHTML}</div>
+                    ${statusBadge}
+                    <span class="team-card-arrow">▼</span>
+                </div>
+            </div>
+            <div class="team-card-body">${bodyHTML}</div>
+        </div>`;
+    });
+    listEl.innerHTML = cardsHTML;
+    showLoading(false);
+}
+
+function miniM(label, val, target, met) {
+    let cls = 'mini-metric';
+    if (met === true) cls += ' met';
+    else if (met === false) cls += ' unmet';
+    const tStr = target ? ` / ${target}` : '';
+    return `<span class="${cls}">${label}: ${val||0}${tStr}</span>`;
+}
+
+function renderReportBody(r, cat) {
+    if (!r) return '';
+    let h = '';
+    if (cat === 'a') {
+        h += '<div class="detail-grid">';
+        h += detailItem('שעות פעילות', r.totalHours, 'יעד: 18', r.targets?.hours?.met);
+        h += detailItem('ימי נוכחות', (r.presenceDays||[]).join(', ') || '—', 'יעד: 3', r.targets?.days?.met);
+        h += detailItem('שעות לימוד', r.teachingHours, 'יעד: 3-4', r.targets?.teaching?.met);
+        h += detailItem('שעות ת"ש', r.tashHours, 'יעד: 2', r.targets?.tash?.met);
+        h += detailItem('שיחות אישיות', r.personalConversations, 'יעד חודשי: 16');
+        h += '</div>';
+        h += qualSection([['הערות כמותיות', r.quantNotes], ['נושאי לימוד', r.topics], ['אווירה ומצב רוח', r.mood], ['דילמות/אתגרים', r.challenges], ['הערות נוספות', r.notes]]);
+    } else if (cat === 'b') {
+        h += '<div class="detail-grid">';
+        h += detailItem('שעות ליווי ר"מים', r.accompanyHours);
+        h += detailItem('סיורי שטח', r.fieldVisits);
+        h += detailItem('שעות הדרכת חתנים', r.groomHours);
+        h += detailItem('שעות מקרי קצה', r.edgeCaseHours);
+        h += '</div>';
+        h += qualSection([['הערות כמותיות', r.quantNotes], ['תובנות מסיורים', r.insights], ['סטטוס חתנים', r.groomStatus], ['אתגרים רוחביים', r.fieldChallenges], ['הערות נוספות', r.notes]]);
+    } else if (cat === 'c') {
+        h += '<div class="detail-grid">';
+        h += detailItem('שיעורי חוסן', r.lessonsCount, 'יעד: ~15', r.targets?.lessons?.met);
+        h += detailItem('מחלקות', r.deptsText || '—');
+        h += '</div>';
+        h += qualSection([['הערות כמותיות', r.quantNotes], ['נושאים שהועברו', r.topics], ['מדד חוסן ורוח', r.resilience], ['הערות נוספות', r.notes]]);
+    } else if (cat === 'd') {
+        h += qualSection([['ניהול אסטרטגי', r.strategic], ['פגישות וישיבות', r.meetings], ['סטטוס מול צבא', r.armyStatus], ['תוכניות ליווי', r.programs], ['עמידה ביעדים', r.goals], ['הערות נוספות', r.notes]]);
+    }
+    return h;
+}
+
+function detailItem(label, value, target, met) {
+    let statusDot = '';
+    if (met === true) statusDot = '<span class="metric-status green"></span>';
+    else if (met === false) statusDot = '<span class="metric-status red"></span>';
+    return `<div class="detail-item"><div class="di-label">${label} ${statusDot}</div><div class="di-value">${value || '—'}</div>${target ? `<div class="di-target">${target}</div>` : ''}</div>`;
+}
+
+function qualSection(items) {
+    const filled = items.filter(([,v]) => v && v.trim());
+    if (!filled.length) return '';
+    let h = '<div class="qual-section">';
+    filled.forEach(([label, value]) => {
+        h += `<div class="qual-item"><div class="qi-label">${label}</div><div class="qi-value">${value}</div></div>`;
+    });
+    h += '</div>';
+    return h;
+}
+
+function toggleTeamCard(id) {
+    const el = document.getElementById('tc-' + id);
+    if (el) el.classList.toggle('expanded');
+}
+
+function switchWeekTab(personName, weekIdx, btn) {
+    const pReports = (window._dashReports||[]).filter(r => r.person === personName);
+    const r = pReports[weekIdx]; if (!r) return;
+    const cat = getPersonCategory(personName);
+    const cleanId = personName.replace(/\s/g,'');
+    // Update active tab
+    const tabs = document.querySelectorAll(`#wtabs-${cleanId} .week-tab`);
+    tabs.forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    // Update detail
+    document.getElementById(`wdetail-${cleanId}`).innerHTML = renderReportBody(r, cat);
+    // Update edit button to point to this week
+    const editDiv = document.getElementById(`wedit-${cleanId}`);
+    if (editDiv) {
+        editDiv.innerHTML = `<button class="btn-secondary btn-sm" onclick="editReportFromDash('${personName.replace(/'/g,"\\'")}',${weekIdx})">ערוך דיווח זה</button>`;
+    }
+}
+
+function editReportFromDash(personName, weekIdx) {
+    const pReports = (window._dashReports||[]).filter(r => r.person === personName);
+    const r = pReports[weekIdx]; if (!r) return;
+
+    editingReportId = r.id;
+    const cat = r.category;
+
+    // Show correct form
+    ['form-a','form-b','form-c','form-d'].forEach(id => document.getElementById(id).style.display = 'none');
+    document.getElementById('form-' + cat).style.display = 'block';
+    document.getElementById('submit-area').style.display = 'block';
+    document.getElementById('person-type-indicator').style.display = 'block';
+    document.getElementById('person-type-text').textContent = `עריכת דיווח: ${r.person} — ${CATEGORY_NAMES[cat]}`;
+    document.getElementById('btn-submit').textContent = 'עדכן דיווח';
+
+    // Populate fields
+    if (cat==='a') {
+        document.getElementById('a-hours').value = r.totalHours||'';
+        document.querySelectorAll('#a-days .day-chip').forEach(c=>c.classList.remove('selected'));
+        (r.presenceDays||[]).forEach(d => { const chip = document.querySelector(`#a-days [data-day="${d}"]`); if(chip) chip.classList.add('selected'); });
+        document.getElementById('a-teaching-hours').value = r.teachingHours||'';
+        document.getElementById('a-tash-hours').value = r.tashHours||'';
+        document.getElementById('a-conversations').value = r.personalConversations||'';
+        document.getElementById('a-quant-notes').value = r.quantNotes||'';
+        document.getElementById('a-topics').value = r.topics||'';
+        document.getElementById('a-mood').value = r.mood||'';
+        document.getElementById('a-challenges').value = r.challenges||'';
+        document.getElementById('a-notes').value = r.notes||'';
+    } else if (cat==='b') {
+        document.getElementById('b-accompany-hours').value = r.accompanyHours||'';
+        document.getElementById('b-field-visits').value = r.fieldVisits||'';
+        document.getElementById('b-groom-hours').value = r.groomHours||'';
+        document.getElementById('b-edge-cases').value = r.edgeCaseHours||'';
+        document.getElementById('b-quant-notes').value = r.quantNotes||'';
+        document.getElementById('b-insights').value = r.insights||'';
+        document.getElementById('b-groom-status').value = r.groomStatus||'';
+        document.getElementById('b-field-challenges').value = r.fieldChallenges||'';
+        document.getElementById('b-notes').value = r.notes||'';
+    } else if (cat==='c') {
+        document.getElementById('c-lessons-count').value = r.lessonsCount||'';
+        document.getElementById('c-depts-text').value = r.deptsText||'';
+        document.getElementById('c-quant-notes').value = r.quantNotes||'';
+        document.getElementById('c-topics').value = r.topics||'';
+        document.getElementById('c-resilience').value = r.resilience||'';
+        document.getElementById('c-notes').value = r.notes||'';
+    } else if (cat==='d') {
+        document.getElementById('d-strategic').value = r.strategic||'';
+        document.getElementById('d-meetings').value = r.meetings||'';
+        document.getElementById('d-army-status').value = r.armyStatus||'';
+        document.getElementById('d-programs').value = r.programs||'';
+        document.getElementById('d-goals').value = r.goals||'';
+        document.getElementById('d-notes').value = r.notes||'';
+    }
+
+    // Set week and user context for save
+    currentWeekStart = new Date(r.weekStart + 'T00:00:00');
+    updateWeekDisplay();
+    currentUser = { name: r.person, isAdmin: true };
+    showScreen('home');
+}
+
+function getDateRange() {
+    if (dashRange === 'week') {
+        const ws = dashWeekStart;
+        const we = new Date(ws); we.setDate(we.getDate()+6);
+        return {from: getWeekKey(ws), to: getWeekKey(we)};
+    } else if (dashRange === 'month') {
+        const mv = document.getElementById('dash-month-picker').value;
+        if (!mv) { const now=new Date(); return {from: getWeekKey(new Date(now.getFullYear(),now.getMonth(),1)), to: getWeekKey(new Date(now.getFullYear(),now.getMonth()+1,0))}; }
+        const [y,m] = mv.split('-').map(Number);
+        return {from: getWeekKey(new Date(y,m-1,1)), to: getWeekKey(new Date(y,m,0))};
+    } else if (dashRange === 'all') {
+        return {from: '2020-01-01', to: '2099-12-31'};
+    } else {
+        return {from: document.getElementById('range-from').value, to: document.getElementById('range-to').value};
+    }
+}
+
+function setRange(r, btn) {
+    dashRange = r;
+    document.querySelectorAll('.range-chip').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('dash-week-nav').style.display = r==='week' ? 'block' : 'none';
+    document.getElementById('dash-month-nav').style.display = r==='month' ? 'block' : 'none';
+    document.getElementById('custom-range').style.display = r==='custom' ? 'block' : 'none';
+    if (r==='week') updateDashWeekDisplay();
+    if (r==='month' && !document.getElementById('dash-month-picker').value) {
+        const now=new Date(); document.getElementById('dash-month-picker').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+    }
+    loadDashboard();
+}
+
+function changeDashWeek(delta) {
+    dashWeekStart = new Date(dashWeekStart);
+    dashWeekStart.setDate(dashWeekStart.getDate() + delta*7);
+    updateDashWeekDisplay();
+    loadDashboard();
+}
+
+function updateDashWeekDisplay() {
+    const end = new Date(dashWeekStart); end.setDate(end.getDate()+6);
+    const greg = `${formatDate(dashWeekStart)} - ${formatDate(end)}`;
+    const hs = getHebrewDate(dashWeekStart), he = getHebrewDate(end);
+    const heb = (hs && he) ? `${hs} - ${he}` : '';
+    document.getElementById('dash-week-display').innerHTML = greg + (heb ? `<br><span style="font-size:0.8rem;color:var(--primary-lighter);font-weight:500;">${heb}</span>` : '');
+}
+
+// (Edit report is handled by editReportFromDash above)
+
+// ============================================================
+// AI SUMMARY
+// ============================================================
+function generateAISummary() {
+    const reports = window._dashReports || [];
+    if (!reports.length) { showToast('אין דיווחים לסיכום'); return; }
+
+    // Generate a local summary based on data
+    const catA = reports.filter(r=>r.category==='a');
+    const catC = reports.find(r=>r.category==='c');
+    const allNotes = reports.map(r=>[r.mood,r.challenges,r.notes,r.insights,r.fieldChallenges,r.resilience,r.goals,r.quantNotes].filter(Boolean)).flat();
+
+    let summary = `📊 סיכום לתקופה (${reports.length} דיווחים):\n\n`;
+
+    if (catA.length) {
+        const avgH = Math.round(catA.reduce((s,r)=>s+(r.totalHours||0),0)/catA.length*10)/10;
+        const avgD = Math.round(catA.reduce((s,r)=>s+(r.presenceDays?.length||0),0)/catA.length*10)/10;
+        const avgT = Math.round(catA.reduce((s,r)=>s+(r.teachingHours||0),0)/catA.length*10)/10;
+        const avgConv = Math.round(catA.reduce((s,r)=>s+(r.personalConversations||0),0)/catA.length*10)/10;
+        summary += `ר"מים פלוגתיים (${catA.length} דיווחים):\n`;
+        summary += `• ממוצע שעות: ${avgH} (יעד: 18)\n`;
+        summary += `• ממוצע ימי נוכחות: ${avgD} (יעד: 3)\n`;
+        summary += `• ממוצע שעות לימוד: ${avgT} (יעד: 3)\n`;
+        summary += `• ממוצע שיחות אישיות: ${avgConv}\n\n`;
+    }
+    if (catC) {
+        summary += `מרצה חוסן (הרב קריאף):\n• שיעורים: ${catC.lessonsCount||0} (יעד: 15)\n• מחלקות: ${catC.deptsText||'לא דווח'}\n\n`;
+    }
+    if (allNotes.length) {
+        summary += `נקודות מהותיות שעלו:\n`;
+        allNotes.slice(0,8).forEach(n => { if(n.length>5) summary += `• ${n.substring(0,120)}${n.length>120?'...':''}\n`; });
+    }
+
+    document.getElementById('ai-summary-container').innerHTML = `<div class="ai-summary-box"><div class="title">✨ סיכום אוטומטי</div><div class="content">${summary}</div></div>`;
+}
+
+// ============================================================
+// PAYMENT - דו"ח ביצוע ודרישת תשלום
+// ============================================================
+const HEB_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+function getMonthHeb(m) { const [y,mo] = m.split('-').map(Number); return `${HEB_MONTHS[mo-1]} ${y}`; }
+
+async function gatherPaymentData() {
+    const month = document.getElementById('pay-month').value;
+    if (!month) { showToast('יש לבחור חודש'); return null; }
+    const rmTotal = parseFloat(document.getElementById('pay-rm-total').value)||33000;
+    const rotmanSalary = parseFloat(document.getElementById('pay-rotman').value)||15000;
+    const kleimanSalary = parseFloat(document.getElementById('pay-kleiman').value)||10000;
+    const kriafRate = parseFloat(document.getElementById('pay-rate-lesson').value)||170;
+
+    const [y,m] = month.split('-').map(Number);
+    const from = new Date(y,m-1,1), to = new Date(y,m,0);
+    const fromKey = getWeekKey(from), toKey = getWeekKey(to);
+
+    const snap = await db.collection('weekly-reports').orderBy('weekStart').get();
+    const reports = snap.docs.map(d=>d.data()).filter(r=>r.weekStart>=fromKey && r.weekStart<=toKey);
+    const byPerson = {};
+    reports.forEach(r => { if(!byPerson[r.person]) byPerson[r.person]=[]; byPerson[r.person].push(r); });
+
+    // Kriaf totals
+    const kriafReports = byPerson['הרב חיים קריאף'] || [];
+    const kriafLessons = kriafReports.reduce((s,r)=>s+(r.lessonsCount||0),0);
+    const kriafTotal = kriafLessons * kriafRate;
+    const kriafDepts = kriafReports.map(r=>r.deptsText).filter(Boolean).join(', ');
+
+    // Kleiman totals
+    const kleimanReports = byPerson['הרב יוחנן קליימן'] || [];
+    const kleimanHours = { accompany: kleimanReports.reduce((s,r)=>s+(r.accompanyHours||0),0), field: kleimanReports.reduce((s,r)=>s+(r.fieldVisits||0),0), groom: kleimanReports.reduce((s,r)=>s+(r.groomHours||0),0), edge: kleimanReports.reduce((s,r)=>s+(r.edgeCaseHours||0),0) };
+
+    const grandTotal = rmTotal + rotmanSalary + kleimanSalary + kriafTotal;
+
+    return { month, monthHeb: getMonthHeb(month), rmTotal, rotmanSalary, kleimanSalary, kriafRate, kriafLessons, kriafTotal, kriafDepts, kleimanHours, grandTotal, byPerson, reports };
+}
+
+async function generatePaymentPreview() {
+    showLoading(true);
+    try {
+        const d = await gatherPaymentData();
+        if (!d) { showLoading(false); return; }
+        window._payData = d;
+
+        let html = `<div class="card" style="margin-top:14px;">
+            <div class="card-title"><div class="icon">📋</div>דו"ח ביצוע ודרישת תשלום — ${d.monthHeb}</div>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">מוגש אל: עמותת "אנשים ביחד" (ע"ר 580805760)</p>
+            <table class="payment-table">
+            <tr><th>סעיף</th><th>סכום (₪)</th></tr>
+            <tr><td>פעילות ר"מים (עמותת רוח חשמונאית)</td><td>${d.rmTotal.toLocaleString()}</td></tr>
+            <tr><td>הרב משה דוד רוטמן</td><td>${d.rotmanSalary.toLocaleString()}</td></tr>
+            <tr><td>הרב יוחנן קליימן</td><td>${d.kleimanSalary.toLocaleString()}</td></tr>
+            <tr><td>הרב חיים קריאף (${d.kriafLessons} שיעורים × ${d.kriafRate}₪)</td><td>${d.kriafTotal.toLocaleString()}</td></tr>
+            <tr style="font-weight:700;background:#EBF5EE;"><td>סה"כ</td><td>${d.grandTotal.toLocaleString()} ₪</td></tr>
+            </table></div>`;
+        document.getElementById('payment-result').innerHTML = html;
+        document.getElementById('payment-actions').style.display = 'block';
+    } catch(e) { console.error(e); showToast('שגיאה באיסוף נתונים'); }
+    showLoading(false);
+}
+
+async function downloadPaymentDocx() {
+    if (!window._payData) { showToast('יש להפיק תצוגה מקדימה קודם'); return; }
+    showLoading(true);
+    try {
+        // Lazy load docx library
+        if (!window.docx) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = 'https://unpkg.com/docx@8.5.0/build/index.umd.js';
+                s.onload = resolve; s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+        const D = window.docx;
+        const d = window._payData;
+
+        // Helpers
+        const rP = (text, opts={}) => new D.Paragraph({ bidirectional:true, alignment:opts.align||D.AlignmentType.RIGHT, spacing:opts.spacing||{}, ...(opts.pOpts||{}),
+            children: Array.isArray(text) ? text : [new D.TextRun({ text, rightToLeft:true, font:'David', size:opts.size||24, bold:!!opts.bold, color:opts.color||'000000' })] });
+        const rT = (text, opts={}) => new D.TextRun({ text, rightToLeft:true, font:'David', size:opts.size||24, bold:!!opts.bold, color:opts.color||'000000', underline:opts.underline?{}:undefined });
+        const emptyP = () => rP('');
+        const sigLine = (leftLabel, rightLabel) => [
+            emptyP(), emptyP(),
+            new D.Paragraph({ bidirectional:true, alignment:D.AlignmentType.RIGHT, spacing:{after:40},
+                children: [rT('________________                                        ________________')] }),
+            new D.Paragraph({ bidirectional:true, alignment:D.AlignmentType.RIGHT,
+                children: [rT(leftLabel + '                                        ' + rightLabel, {bold:true})] })
+        ];
+        const pageProps = { page:{ size:{width:11906,height:16838}, margin:{top:1200,right:1200,bottom:1200,left:1200} } };
+
+        // Numbering config for bullets
+        const numbering = { config: [
+            { reference:'payBullets', levels:[{ level:0, format:D.LevelFormat.BULLET, text:'\u2022', alignment:D.AlignmentType.LEFT, style:{paragraph:{indent:{left:720,hanging:360}}} }] },
+            { reference:'payNumbers', levels:[{ level:0, format:D.LevelFormat.DECIMAL, text:'%1.', alignment:D.AlignmentType.LEFT, style:{paragraph:{indent:{left:720,hanging:360}}} }] }
+        ]};
+        const bullet = (text, opts={}) => new D.Paragraph({ bidirectional:true, numbering:{reference:'payBullets',level:0}, spacing:opts.spacing||{after:80},
+            children: Array.isArray(text) ? text : [rT(text, opts)] });
+
+        // ===================== PAGE 1: MAIN SUMMARY =====================
+        const rmNames = TEAM_CATEGORIES['a'].map(n=>n.replace('הרב ','')).join(', ');
+        const page1 = [
+            rP('בס"ד', {size:20, align:D.AlignmentType.RIGHT}),
+            emptyP(),
+            rP(`דו"ח ביצוע ודרישת תשלום מרוכזת – תוכנית "רוח חשמונאית"`, {bold:true, size:28, align:D.AlignmentType.CENTER, pOpts:{spacing:{after:120}}}),
+            rP(`חודש דיווח: ${d.monthHeb}`, {align:D.AlignmentType.CENTER, pOpts:{spacing:{after:60}}}),
+            rP([rT('מוגש אל: ', {bold:true}), rT('עמותת "אנשים ביחד" (ע"ר 580805760)')], {align:D.AlignmentType.CENTER}),
+            emptyP(),
+            rP('1. ריכוז דרישת תשלום', {bold:true, size:26, pOpts:{spacing:{after:120}}}),
+            bullet([rT('פעילות ר"מים (עמותת רוח חשמונאית): ', {bold:true}), rT(`${d.rmTotal.toLocaleString()} ₪`)]),
+            bullet([rT('הרב משה דוד רוטמן: ', {bold:true}), rT(`${d.rotmanSalary.toLocaleString()} ₪`)]),
+            bullet([rT('הרב יוחנן קליימן: ', {bold:true}), rT(`${d.kleimanSalary.toLocaleString()} ₪`)]),
+            bullet([rT('הרב חיים קריאף: ', {bold:true}), rT(`${d.kriafTotal.toLocaleString()} ₪`)]),
+            emptyP(),
+            rP('2. הצהרת ביצוע ותפוקות', {bold:true, size:26, pOpts:{spacing:{after:120}}}),
+            rP(`אנו מאשרים כי בחודש ${d.monthHeb} בוצעו המשימות הבאות במלואן, בהתאם להסכמי ההתקשרות:`, {pOpts:{spacing:{after:120}}}),
+            bullet([rT(`צוות הר"מים (${rmNames}): `, {bold:true}), rT('כל ר"מ ביצע לפחות 18 שעות שבועיות (כולל מינימום 3 שעות לימוד, 2 שעות ת"ש ו-16 שיחות אישיות).')]),
+            bullet([rT('הרב משה דוד רוטמן: ', {bold:true}), rT('בוצע ניהול חינוכי של התוכנית, הובלת צוות הר"מים וקיום ישיבות הנהלה וסטטוס.')]),
+            bullet([rT('הרב יוחנן קליימן: ', {bold:true}), rT('בוצע ליווי שוטף של צוות הר"מים, סיורי שטח בבסיסים, והובלת תחום חתנים. (סה"כ עד 148 שעות פעילות חודשיות בהתאם לפירוט המשימות בהסכם)')]),
+            bullet([rT('הרב חיים קריאף: ', {bold:true}), rT(`הועברו סה"כ ${d.kriafLessons} שיעורי חוסן ואמונה${d.kriafDepts ? ' ב-' + d.kriafDepts : ''}.`)]),
+            emptyP(),
+            rP('3. חתימות ואישורים', {bold:true, size:26, pOpts:{spacing:{after:120}}}),
+            rP('על סמך הפירוט הנ"ל, אנו מאשרים את דרישת התשלום.'),
+            ...sigLine('מנכ"ל עמותת רוח חשמונאית', 'מנהל פעילות תורנית-חינוכית')
+        ];
+
+        // ===================== APPENDICES: ר"מים פלוגתיים =====================
+        const rmAppendices = [];
+        TEAM_CATEGORIES['a'].forEach((name, idx) => {
+            const reps = d.byPerson[name] || [];
+            const events = reps.map(r=>[r.topics, r.mood, r.challenges, r.notes].filter(Boolean)).flat().filter(e=>e.length>5).slice(0,2);
+            const shortName = name.replace('הרב ','');
+            rmAppendices.push(...[
+                new D.Paragraph({ children:[new D.PageBreak()] }),
+                rP('בס"ד', {size:20}),
+                emptyP(),
+                rP(`נספח ביצוע ${idx+1}: דיווח חודשי ר"מ פלוגתי – ${shortName}`, {bold:true, size:26, align:D.AlignmentType.CENTER, pOpts:{spacing:{after:80}}}),
+                rP(`מוגש עבור חודש: ${d.monthHeb}  מסגרת פעילות: עמותת רוח חשמונאית`, {align:D.AlignmentType.CENTER, pOpts:{spacing:{after:60}}}),
+                emptyP(),
+                rP([rT('פירוט תפוקות וביצוע: ', {bold:true}), rT('(יש לסמן בוצע או לפרט כמות במקומות הרלוונטיים כדי לאשר עמידה בתנאי ההסכם)')]),
+                emptyP(),
+                bullet('סה"כ שעות שבועיות (מינימום 18 שעות נדרשות ): בוצע'),
+                bullet('נוכחות בבסיס/בשטח (מינימום 3 ימים שונים בשבוע ): בוצע'),
+                bullet('שעות לימוד שבועיות (מינימום 3-4 שעות נדרשות ): בוצע'),
+                bullet('נוכחות בשעות ת"ש (מינימום 2 שעות שבועיות נדרשות ): בוצע'),
+                bullet('מספר שיחות אישיות (יעד חודשי של לפחות 16 שיחות ): בוצע'),
+                emptyP(),
+                rP('אירועים מרכזיים בהובלת הר"מ החודש:', {bold:true}),
+                ...(events.length ? events.map((e,i) => rP(`${i+1}. ${e.substring(0,100)}`)) : [rP('1.'), rP('2.')]),
+                emptyP(),
+                rP('חתימות לאישור:', {bold:true}),
+                ...sigLine(shortName + '- ר"מ פלוגתי', 'מנהל פעילות תורנית-חינוכית')
+            ]);
+        });
+
+        // ===================== APPENDIX: KLEIMAN =====================
+        const kh = d.kleimanHours;
+        const kleimanAppendix = [
+            new D.Paragraph({ children:[new D.PageBreak()] }),
+            rP('בס"ד', {size:20}),
+            emptyP(),
+            rP('נספח ביצוע 4 + דרישת תשלום- הרב יוחנן קליימן', {bold:true, size:26, align:D.AlignmentType.CENTER, pOpts:{spacing:{after:80}}}),
+            rP(`מוגש עבור חודש: ${d.monthHeb}`, {align:D.AlignmentType.CENTER}),
+            rP([rT('סכום לתשלום החודש: ', {}), rT(`${d.kleimanSalary.toLocaleString()} ₪`, {bold:true})], {align:D.AlignmentType.CENTER, pOpts:{spacing:{after:100}}}),
+            emptyP(),
+            rP('פירוט תפוקות וביצוע: (יש לפרט את כמות השעות שבוצעו בפועל בכל סעיף)', {bold:true}),
+            emptyP(),
+            bullet(`ליווי מקצועי של צוות הר"מים (ישיבות ופ.ע)- יעד: 28 שעות בחודש: ${kh.accompany||'_'}_ שעות.`),
+            bullet(`סיורי שטח ונוכחות בבסיסים- יעד: 80 שעות בחודש: ${kh.field||'_'}_ שעות.`),
+            bullet(`הובלת תחום חתנים וליווי חיילים לקראת נישואין - יעד: עד 20 שעות בחודש: ${kh.groom||'_'}_ שעות.`),
+            bullet(`מענה למקרי קצה ודילמות חינוכיות מהשטח- יעד: עד 20 שעות בחודש: ${kh.edge||'_'}_ שעות.`),
+            bullet('תיאום שוטף מול סמנכ"ל החינוך ומנהלי התוכנית: בוצע'),
+            emptyP(),
+            ...sigLine('יוחנן קליימן, מוביל ר"מים', 'מנהל פעילות תורנית-חינוכית')
+        ];
+
+        // ===================== APPENDIX: KRIAF =====================
+        const kriafAppendix = [
+            new D.Paragraph({ children:[new D.PageBreak()] }),
+            rP('בס"ד', {size:20}),
+            emptyP(),
+            rP('נספח ביצוע 7+ דרישת תשלום- הרב חיים קריאף (מוביל תוכנית חוסן ואמונה)', {bold:true, size:26, align:D.AlignmentType.CENTER, pOpts:{spacing:{after:80}}}),
+            rP(`מוגש עבור חודש: ${d.monthHeb}`, {align:D.AlignmentType.CENTER, pOpts:{spacing:{after:100}}}),
+            emptyP(),
+            rP('חישוב תשלום:', {bold:true}),
+            bullet(`סה"כ שיעורים שהועברו בפועל החודש: ${d.kriafLessons}_ (הערה: כל חריגה מעל 60 שיעורים מחייבת אישור מראש).`),
+            bullet(`תעריף לשיעור אחד: ${d.kriafRate} ₪.`),
+            bullet([rT('סה"כ לתשלום החודש: ', {bold:true}), rT(`₪${d.kriafTotal.toLocaleString()}.`, {bold:true})]),
+            emptyP(),
+            rP('פירוט תפוקות וביצוע:', {bold:true}),
+            rP('(יש לסמן בוצע או לפרט כמות)', {size:20}),
+            bullet(`כיסוי מחלקות בחטיבה והתאמת תכנים לשלבי השירות (יעד: כ-15 מחלקות): ${d.kriafDepts || '_'} מחלקות.`),
+            bullet('תיאום לו"ז שוטף מול סגל החטיבה והפלוגות: בוצע'),
+            emptyP(),
+            ...sigLine('חיים קריאף, מוביל ר"מים', 'מנהל פעילות תורנית-חינוכית')
+        ];
+
+        // ===================== APPENDIX: ROTMAN =====================
+        const rotmanAppendix = [
+            new D.Paragraph({ children:[new D.PageBreak()] }),
+            rP('בס"ד', {size:20}),
+            emptyP(),
+            rP('נספח ביצוע 6+דרישת תשלום- הרב משה דוד רוטמן (מנהל חינוכי)', {bold:true, size:26, align:D.AlignmentType.CENTER, pOpts:{spacing:{after:80}}}),
+            rP(`מוגש עבור חודש: ${d.monthHeb}`, {align:D.AlignmentType.CENTER}),
+            rP([rT('סכום לתשלום החודש: ', {}), rT(`${d.rotmanSalary.toLocaleString()} ₪`, {bold:true})], {align:D.AlignmentType.CENTER, pOpts:{spacing:{after:100}}}),
+            emptyP(),
+            rP('פירוט תפוקות וביצוע: (יש לסמן בוצע במקומות הרלוונטיים לאישור ביצוע)', {bold:true}),
+            emptyP(),
+            bullet('ניהול אסטרטגי כולל של מערך הליווי הרוחני והחינוכי בחטיבה: בוצע'),
+            bullet('הובלת צוות הר"מים ומעבירי התוכן: בוצע'),
+            bullet('בקרת איכות ועמידה ביעדי התוכנית: בוצע'),
+            bullet('השלמה ובניית תוכנית ליווי עבור שלבי השירות השונים: בוצע'),
+            bullet('פעולה ליצירת מנגנון תשלום קבוע מול גורמים חיצוניים/צבאיים: בוצע'),
+            bullet('השתתפות בישיבות הנהלה עיתיות וקיום פגישה חודשית לניהול התקציב: בוצע'),
+            emptyP(),
+            ...sigLine('מנכ"ל עמותת רוח חשמונאית', 'מנהל פעילות תורנית-חינוכית')
+        ];
+
+        // BUILD DOCUMENT
+        const doc = new D.Document({
+            numbering,
+            sections: [{
+                properties: pageProps,
+                children: [...page1, ...rmAppendices, ...kleimanAppendix, ...kriafAppendix, ...rotmanAppendix]
+            }]
+        });
+
+        const blob = await D.Packer.toBlob(doc);
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `דוח_ביצוע_ודרישת_תשלום_${d.monthHeb.replace(' ','_')}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('הקובץ הורד בהצלחה');
+    } catch(e) { console.error('DOCX generation error:', e); showToast('שגיאה ביצירת הקובץ'); }
+    showLoading(false);
+}
+
+function printPaymentReport() {
+    if (!window._payData) { showToast('יש להפיק תצוגה מקדימה קודם'); return; }
+    const d = window._payData;
+    const rmNames = TEAM_CATEGORIES['a'].map(n=>n.replace('הרב ','')).join(', ');
+    const kh = d.kleimanHours;
+
+    let html = `<!DOCTYPE html><html lang="he" dir="rtl"><head><meta charset="UTF-8"><title>דו"ח ביצוע — ${d.monthHeb}</title>
+    <style>@page{size:A4;margin:2cm;}body{font-family:'David','Times New Roman',serif;font-size:13pt;line-height:1.6;direction:rtl;}
+    h1{font-size:16pt;text-align:center;}h2{font-size:14pt;margin-top:18pt;}.center{text-align:center;}.sig-line{margin-top:40pt;}
+    .sig-row{display:flex;justify-content:space-between;margin-top:6pt;font-weight:bold;}.page-break{page-break-before:always;}
+    ul{margin:6pt 20pt;}</style></head><body>`;
+
+    // Page 1
+    html += `<div style="text-align:right;font-size:11pt;">בס"ד</div>
+    <h1>דו"ח ביצוע ודרישת תשלום מרוכזת – תוכנית "רוח חשמונאית"</h1>
+    <p class="center">חודש דיווח: ${d.monthHeb}</p>
+    <p class="center"><b>מוגש אל:</b> עמותת "אנשים ביחד" (ע"ר 580805760)</p>
+    <h2>1. ריכוז דרישת תשלום</h2>
+    <ul><li><b>פעילות ר"מים (עמותת רוח חשמונאית):</b> ${d.rmTotal.toLocaleString()} ₪</li>
+    <li><b>הרב משה דוד רוטמן:</b> ${d.rotmanSalary.toLocaleString()} ₪</li>
+    <li><b>הרב יוחנן קליימן:</b> ${d.kleimanSalary.toLocaleString()} ₪</li>
+    <li><b>הרב חיים קריאף:</b> ${d.kriafTotal.toLocaleString()} ₪</li></ul>
+    <h2>2. הצהרת ביצוע ותפוקות</h2>
+    <p>אנו מאשרים כי בחודש ${d.monthHeb} בוצעו המשימות הבאות במלואן, בהתאם להסכמי ההתקשרות:</p>
+    <ul><li><b>צוות הר"מים (${rmNames}):</b> כל ר"מ ביצע לפחות 18 שעות שבועיות.</li>
+    <li><b>הרב משה דוד רוטמן:</b> בוצע ניהול חינוכי של התוכנית.</li>
+    <li><b>הרב יוחנן קליימן:</b> בוצע ליווי שוטף של צוות הר"מים.</li>
+    <li><b>הרב חיים קריאף:</b> הועברו ${d.kriafLessons} שיעורי חוסן ואמונה.</li></ul>
+    <h2>3. חתימות ואישורים</h2>
+    <p>על סמך הפירוט הנ"ל, אנו מאשרים את דרישת התשלום.</p>
+    <div class="sig-line"><hr style="width:35%;display:inline-block;margin-left:30%"><hr style="width:35%;display:inline-block;">
+    <div class="sig-row"><span>מנכ"ל עמותת רוח חשמונאית</span><span>מנהל פעילות תורנית-חינוכית</span></div></div>`;
+
+    // Appendices for each RM
+    TEAM_CATEGORIES['a'].forEach((name, idx) => {
+        const short = name.replace('הרב ','');
+        html += `<div class="page-break"><div style="text-align:right;font-size:11pt;">בס"ד</div>
+        <h1>נספח ביצוע ${idx+1}: דיווח חודשי ר"מ פלוגתי – ${short}</h1>
+        <p class="center">מוגש עבור חודש: ${d.monthHeb} מסגרת פעילות: עמותת רוח חשמונאית</p>
+        <p><b>פירוט תפוקות וביצוע:</b></p>
+        <ul><li>סה"כ שעות שבועיות (מינימום 18): בוצע</li><li>נוכחות בבסיס/בשטח (מינימום 3 ימים): בוצע</li>
+        <li>שעות לימוד שבועיות (מינימום 3-4): בוצע</li><li>נוכחות בשעות ת"ש (מינימום 2): בוצע</li>
+        <li>מספר שיחות אישיות (יעד: 16): בוצע</li></ul>
+        <p><b>אירועים מרכזיים:</b></p><p>1.<br>2.</p>
+        <div class="sig-line"><hr style="width:35%;display:inline-block;margin-left:30%"><hr style="width:35%;display:inline-block;">
+        <div class="sig-row"><span>${short} - ר"מ פלוגתי</span><span>מנהל פעילות תורנית-חינוכית</span></div></div></div>`;
+    });
+
+    // Kleiman
+    html += `<div class="page-break"><div style="text-align:right;font-size:11pt;">בס"ד</div>
+    <h1>נספח ביצוע 4 + דרישת תשלום- הרב יוחנן קליימן</h1>
+    <p class="center">מוגש עבור חודש: ${d.monthHeb}</p><p class="center"><b>סכום לתשלום:</b> ${d.kleimanSalary.toLocaleString()} ₪</p>
+    <p><b>פירוט תפוקות:</b></p><ul>
+    <li>ליווי מקצועי ר"מים: ${kh.accompany||'_'} שעות</li><li>סיורי שטח: ${kh.field||'_'} שעות</li>
+    <li>הובלת חתנים: ${kh.groom||'_'} שעות</li><li>מקרי קצה: ${kh.edge||'_'} שעות</li>
+    <li>תיאום שוטף: בוצע</li></ul>
+    <div class="sig-line"><hr style="width:35%;display:inline-block;margin-left:30%"><hr style="width:35%;display:inline-block;">
+    <div class="sig-row"><span>יוחנן קליימן, מוביל ר"מים</span><span>מנהל פעילות תורנית-חינוכית</span></div></div></div>`;
+
+    // Kriaf
+    html += `<div class="page-break"><div style="text-align:right;font-size:11pt;">בס"ד</div>
+    <h1>נספח ביצוע 7+ דרישת תשלום- הרב חיים קריאף</h1>
+    <p class="center">מוגש עבור חודש: ${d.monthHeb}</p>
+    <p><b>חישוב תשלום:</b></p><ul><li>שיעורים: ${d.kriafLessons}</li><li>תעריף: ${d.kriafRate} ₪</li>
+    <li><b>סה"כ: ₪${d.kriafTotal.toLocaleString()}</b></li></ul>
+    <p><b>פירוט תפוקות:</b></p><ul><li>כיסוי מחלקות: ${d.kriafDepts||'_'}</li><li>תיאום לו"ז: בוצע</li></ul>
+    <div class="sig-line"><hr style="width:35%;display:inline-block;margin-left:30%"><hr style="width:35%;display:inline-block;">
+    <div class="sig-row"><span>חיים קריאף, מוביל ר"מים</span><span>מנהל פעילות תורנית-חינוכית</span></div></div></div>`;
+
+    // Rotman
+    html += `<div class="page-break"><div style="text-align:right;font-size:11pt;">בס"ד</div>
+    <h1>נספח ביצוע 6+ דרישת תשלום- הרב משה דוד רוטמן</h1>
+    <p class="center">מוגש עבור חודש: ${d.monthHeb}</p><p class="center"><b>סכום:</b> ${d.rotmanSalary.toLocaleString()} ₪</p>
+    <p><b>פירוט תפוקות:</b></p><ul>
+    <li>ניהול אסטרטגי: בוצע</li><li>הובלת צוות ר"מים: בוצע</li><li>בקרת איכות: בוצע</li>
+    <li>בניית תוכניות ליווי: בוצע</li><li>מנגנון תשלום: בוצע</li><li>ישיבות הנהלה: בוצע</li></ul>
+    <div class="sig-line"><hr style="width:35%;display:inline-block;margin-left:30%"><hr style="width:35%;display:inline-block;">
+    <div class="sig-row"><span>מנכ"ל עמותת רוח חשמונאית</span><span>מנהל פעילות תורנית-חינוכית</span></div></div></div>`;
+
+    html += '</body></html>';
+    const w = window.open('', '_blank');
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 500);
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+function showLoading(show) { document.getElementById('loading').style.display = show ? 'flex' : 'none'; }
+
+// ============================================================
+// START
+// ============================================================
+initApp();
+setTimeout(tryAutoLogin, 500);
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').then(reg => {
+        console.log('SW registered:', reg.scope);
+    }).catch(err => console.warn('SW registration failed:', err));
+}
+
+// Handle Capacitor/native status bar padding
+if (window.Capacitor || CSS.supports('padding-top: env(safe-area-inset-top)')) {
+    document.documentElement.style.setProperty('--sat', 'env(safe-area-inset-top)');
+    document.documentElement.style.setProperty('--sab', 'env(safe-area-inset-bottom)');
+}
+</script>
+</body>
+</html>

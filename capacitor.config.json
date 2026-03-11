@@ -1,0 +1,25 @@
+{
+  "appId": "org.ruach.hashmonait",
+  "appName": "רוח חשמונאית",
+  "webDir": "www",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "backgroundColor": "#1B4332",
+      "androidSplashResourceName": "splash",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#1B4332"
+    }
+  },
+  "android": {
+    "allowMixedContent": true,
+    "useLegacyBridge": false
+  }
+}
