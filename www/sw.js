@@ -1,8 +1,8 @@
-const CACHE_NAME = 'ruach-v1';
+const CACHE_NAME = 'ruach-v2';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
+  './',
+  './index.html',
+  './manifest.json',
   'https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap'
 ];
 
