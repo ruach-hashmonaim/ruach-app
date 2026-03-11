@@ -1,0 +1,8 @@
+name = "ruach-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# After setup, add your custom domain:
+# routes = [
+#   { pattern = "api.ruach-hashmonaim.org/*", zone_name = "ruach-hashmonaim.org" }
+# ]
