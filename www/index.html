@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>רוח החשמונאים</title>
+    <title>רוח חשמונאית</title>
     <meta name="theme-color" content="#1B4332">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="רוח החשמונאים">
+    <meta name="apple-mobile-web-app-title" content="רוח חשמונאית">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="format-detection" content="telephone=no">
     <link rel="manifest" href="manifest.json">
@@ -49,12 +49,16 @@ body { font-family:'Heebo',sans-serif; background:var(--bg); color:var(--text); 
 .sidebar-nav a.active { background:rgba(212,168,67,0.15); color:var(--accent); border-right-color:var(--accent); font-weight:600; }
 .sidebar-nav a .nav-icon { width:22px; text-align:center; font-size:1.05rem; }
 .sidebar-nav .nav-section { padding:16px 20px 6px; font-size:0.72rem; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:rgba(255,255,255,0.35); }
-.sidebar-user { padding:14px 20px; border-top:1px solid rgba(255,255,255,0.1); display:flex; align-items:center; gap:10px; }
+.sidebar-footer { padding:14px 20px; border-top:1px solid rgba(255,255,255,0.1); }
+.sidebar-user { display:flex; align-items:center; gap:10px; }
 .sidebar-user .user-avatar { width:34px; height:34px; border-radius:50%; background:var(--accent); color:var(--primary); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem; }
 .sidebar-user .user-info { flex:1; }
 .sidebar-user .user-name { font-size:0.82rem; font-weight:600; }
 .sidebar-user .user-role { font-size:0.7rem; opacity:0.5; }
 .sidebar-user .btn-logout { background:none; border:1px solid rgba(255,255,255,0.2); color:#ffcdd2; padding:5px 10px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:0.72rem; }
+.btn-staff-login { display:flex; align-items:center; gap:8px; width:100%; padding:10px 14px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:8px; color:rgba(255,255,255,0.8); font-family:inherit; font-size:0.82rem; font-weight:500; cursor:pointer; transition:all 0.2s; }
+.btn-staff-login:hover { background:rgba(255,255,255,0.15); color:#fff; }
+.credit-line { font-size:0.65rem; opacity:0.4; text-align:center; margin-top:10px; }
 
 /* MAIN CONTENT */
 .main-content { flex:1; margin-right:var(--sidebar-w); min-height:100vh; }
@@ -66,7 +70,7 @@ body { font-family:'Heebo',sans-serif; background:var(--bg); color:var(--text); 
 .page-section.active { display:block; }
 
 /* MOBILE TOGGLE */
-.mobile-toggle { display:none; background:var(--primary); color:#fff; border:none; width:42px; height:42px; border-radius:50%; font-size:1.3rem; cursor:pointer; position:fixed; bottom:20px; right:20px; z-index:300; box-shadow:var(--shadow-lg); }
+.mobile-toggle { display:none; background:var(--primary); color:#fff; border:none; width:42px; height:42px; border-radius:50%; font-size:1.3rem; cursor:pointer; position:fixed; bottom:20px; right:20px; z-index:300; box-shadow:var(--shadow-lg); align-items:center; justify-content:center; }
 .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:190; }
 
 /* CARDS & FORMS */
@@ -76,7 +80,7 @@ body { font-family:'Heebo',sans-serif; background:var(--bg); color:var(--text); 
 .form-group { margin-bottom:16px; }
 .form-group label { display:block; font-weight:600; font-size:0.88rem; margin-bottom:4px; }
 .target-badge { display:inline-block; background:#EBF5EE; color:var(--success); font-size:0.73rem; font-weight:600; padding:2px 10px; border-radius:20px; margin-right:4px; }
-input[type="text"],input[type="number"],input[type="password"],input[type="date"],textarea,select {
+input[type="text"],input[type="number"],input[type="password"],input[type="email"],input[type="date"],textarea,select {
     width:100%; padding:11px 13px; border:1.5px solid var(--border); border-radius:var(--radius-sm);
     font-family:inherit; font-size:0.92rem; background:#FAFAF8; color:var(--text); transition:all 0.2s; -webkit-appearance:none;
 }
@@ -102,12 +106,12 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 .week-picker button { background:var(--primary); color:#fff; border:none; width:34px; height:34px; border-radius:50%; cursor:pointer; font-size:1.1rem; display:flex; align-items:center; justify-content:center; }
 .week-display { flex:1; text-align:center; font-weight:600; font-size:0.9rem; background:#FAFAF8; padding:10px 8px; border-radius:var(--radius-sm); border:1.5px solid var(--border); line-height:1.5; }
 
-/* LOGIN */
-.login-page { display:flex; align-items:center; justify-content:center; min-height:100vh; background:linear-gradient(135deg,var(--primary) 0%,#0F2B1F 100%); }
-.login-box { background:#fff; border-radius:16px; padding:36px 28px; width:90%; max-width:380px; text-align:center; box-shadow:var(--shadow-lg); }
+/* LOGIN MODAL */
+.modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:500; align-items:center; justify-content:center; }
+.modal-overlay.open { display:flex; }
+.modal-box { background:#fff; border-radius:16px; padding:36px 28px; width:90%; max-width:380px; text-align:center; box-shadow:var(--shadow-lg); position:relative; }
+.modal-close { position:absolute; top:12px; left:12px; background:none; border:none; font-size:1.4rem; cursor:pointer; color:var(--text-secondary); }
 .login-logo { width:90px; height:90px; border-radius:12px; object-fit:contain; margin:0 auto 12px; display:block; box-shadow:0 4px 20px rgba(27,67,50,0.3); }
-.login-box h2 { font-size:1.3rem; color:var(--primary); margin-bottom:4px; }
-.login-box .subtitle { color:var(--text-secondary); font-size:0.85rem; margin-bottom:20px; }
 
 /* HOME TILES */
 .home-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:16px; }
@@ -119,17 +123,22 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 
 /* LEARNING */
 .program-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
-.program-card { background:#fff; border-radius:var(--radius); border:1px solid var(--border); padding:16px; transition:all 0.2s; }
-.program-card:hover { box-shadow:var(--shadow); }
+.program-card { background:#fff; border-radius:var(--radius); border:1px solid var(--border); padding:16px; transition:all 0.2s; cursor:pointer; }
+.program-card:hover { box-shadow:var(--shadow); border-color:var(--accent); }
 .program-card h3 { font-size:0.95rem; color:var(--primary); margin-bottom:6px; }
 .program-card p { font-size:0.82rem; color:var(--text-secondary); margin-bottom:10px; }
 .progress-bar { height:8px; background:#E8E5DD; border-radius:4px; overflow:hidden; }
 .progress-fill { height:100%; background:linear-gradient(90deg,var(--primary),var(--accent)); border-radius:4px; transition:width 0.5s; }
 .progress-text { font-size:0.72rem; color:var(--text-secondary); margin-top:4px; text-align:left; }
-.daily-check { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; cursor:pointer; }
+.daily-check { display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; cursor:pointer; transition:all 0.2s; }
+.daily-check:hover { border-color:var(--primary-lighter); }
 .daily-check.done { background:#EBF5EE; border-color:var(--success); }
-.daily-check .check-icon { width:24px; height:24px; border:2px solid var(--border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; }
+.daily-check .check-icon { width:24px; height:24px; border:2px solid var(--border); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem; flex-shrink:0; }
 .daily-check.done .check-icon { background:var(--success); border-color:var(--success); color:#fff; }
+.content-frame { width:100%; min-height:500px; border:none; border-radius:var(--radius-sm); background:#fff; }
+.reminder-card { background:linear-gradient(135deg,#FFF8E7,#FFF3D0); border:1px solid #E8D48A; border-radius:var(--radius); padding:16px; margin-top:14px; }
+.reminder-card h4 { color:var(--primary); font-size:0.9rem; margin-bottom:8px; }
+.reminder-badge { display:inline-flex; align-items:center; gap:4px; background:var(--success); color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:600; }
 
 /* SURVEY */
 .survey-list .survey-item { display:flex; align-items:center; justify-content:space-between; padding:14px; border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px; background:#fff; }
@@ -189,6 +198,10 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 .spinner { width:40px; height:40px; border:4px solid var(--border); border-top-color:var(--primary); border-radius:50%; animation:spin 0.8s linear infinite; }
 @keyframes spin { to { transform:rotate(360deg); } }
 
+/* FOOTER */
+.app-footer { text-align:center; padding:20px; font-size:0.75rem; color:var(--text-secondary); border-top:1px solid var(--border); margin-top:30px; }
+.app-footer a { color:var(--primary-lighter); text-decoration:none; font-weight:600; }
+
 /* RESPONSIVE */
 @media (max-width:768px) {
     .sidebar { transform:translateX(100%); width:280px; }
@@ -204,12 +217,13 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 </head>
 <body>
 
-<!-- ========== LOGIN PAGE ========== -->
-<div id="login-page" class="login-page">
-    <div class="login-box">
-        <img class="login-logo" src="icons/icon-192x192.png" alt="רוח החשמונאים">
-        <h2>רוח החשמונאים</h2>
-        <p class="subtitle">פלטפורמת ניהול, הכשרה ולמידה</p>
+<!-- ========== LOGIN MODAL (overlay, not blocking page) ========== -->
+<div class="modal-overlay" id="login-modal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+        <img class="login-logo" src="icons/icon-192x192.png" alt="רוח חשמונאית">
+        <h2 style="color:var(--primary);margin-bottom:4px;">כניסת צוות</h2>
+        <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:20px;">כניסה למערכת הניהול והדיווח</p>
         <div class="form-group" style="text-align:right;">
             <label>שם משתמש</label>
             <select id="login-name"><option value="">-- בחר --</option></select>
@@ -227,14 +241,14 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
     </div>
 </div>
 
-<!-- ========== APP LAYOUT ========== -->
-<div id="app-layout" class="app-layout" style="display:none;">
+<!-- ========== APP LAYOUT (always visible) ========== -->
+<div id="app-layout" class="app-layout">
 
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <img class="sidebar-logo" src="icons/icon-192x192.png" alt="לוגו">
-        <h2>רוח החשמונאים</h2>
+        <h2>רוח חשמונאית</h2>
         <small>עמותת רוח החשמונאים (ע"ר)</small>
     </div>
     <nav class="sidebar-nav">
@@ -249,18 +263,29 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
         <div class="nav-section">שטח וגיאוגרפיה</div>
         <a onclick="navigate('geography')" data-page="geography"><span class="nav-icon">🗺️</span> בעקבות הנצח</a>
 
-        <div class="nav-section">ניהול</div>
-        <a onclick="navigate('reports')" data-page="reports"><span class="nav-icon">📋</span> מעקב שבועי — צוות חינוכי</a>
+        <div class="nav-section">סקרים</div>
         <a onclick="navigate('surveys')" data-page="surveys"><span class="nav-icon">📊</span> סקרים ומשובים</a>
-        <a onclick="navigate('admin')" data-page="admin" id="nav-admin" style="display:none;"><span class="nav-icon">⚙️</span> ניהול מערכת</a>
+
+        <!-- Staff-only sections -->
+        <div class="nav-section staff-only" style="display:none;">ניהול (צוות)</div>
+        <a onclick="navigate('reports')" data-page="reports" class="staff-only" style="display:none;"><span class="nav-icon">📋</span> מעקב שבועי — צוות חינוכי</a>
+        <a onclick="navigate('admin')" data-page="admin" id="nav-admin" class="admin-only" style="display:none;"><span class="nav-icon">⚙️</span> ניהול מערכת</a>
     </nav>
-    <div class="sidebar-user">
-        <div class="user-avatar" id="sidebar-avatar">--</div>
-        <div class="user-info">
-            <div class="user-name" id="sidebar-username">—</div>
-            <div class="user-role" id="sidebar-role">—</div>
+    <div class="sidebar-footer">
+        <!-- Not logged in: show login button -->
+        <div id="sidebar-guest">
+            <button class="btn-staff-login" onclick="openLoginModal()">🔑 כניסת צוות</button>
         </div>
-        <button class="btn-logout" onclick="logout()">יציאה</button>
+        <!-- Logged in: show user info -->
+        <div id="sidebar-user-info" class="sidebar-user" style="display:none;">
+            <div class="user-avatar" id="sidebar-avatar">--</div>
+            <div class="user-info">
+                <div class="user-name" id="sidebar-username">—</div>
+                <div class="user-role" id="sidebar-role">—</div>
+            </div>
+            <button class="btn-logout" onclick="logout()">יציאה</button>
+        </div>
+        <div class="credit-line">פותח ע״י IAB-Smart AI Solutions</div>
     </div>
 </aside>
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -270,7 +295,7 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
     <header class="main-header">
         <div>
             <h1 id="page-title">דף הבית</h1>
-            <div class="breadcrumb" id="page-breadcrumb">רוח החשמונאים</div>
+            <div class="breadcrumb" id="page-breadcrumb">רוח חשמונאית</div>
         </div>
     </header>
 
@@ -279,8 +304,8 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 <!-- ====== HOME ====== -->
 <div class="page-section active" id="page-home">
     <div class="card" style="background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;margin-bottom:20px;">
-        <h2 style="font-size:1.2rem;">שלום, <span id="home-greeting">—</span></h2>
-        <p style="opacity:0.8;font-size:0.88rem;margin-top:4px;">ברוכים הבאים לפלטפורמת רוח החשמונאים</p>
+        <h2 style="font-size:1.2rem;">ברוכים הבאים <span id="home-greeting"></span></h2>
+        <p style="opacity:0.8;font-size:0.88rem;margin-top:4px;">פלטפורמת רוח חשמונאית — למידה, הכשרה ורוח מכבי</p>
     </div>
     <div class="home-grid">
         <a class="home-tile" onclick="navigate('learning')">
@@ -308,17 +333,17 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
             <div class="tile-title">בעקבות הנצח</div>
             <div class="tile-desc">מפה, היסטוריה ומקורות</div>
         </a>
-        <a class="home-tile" onclick="navigate('reports')">
-            <div class="tile-icon">📋</div>
-            <div class="tile-title">דיווח שבועי</div>
-            <div class="tile-desc">מעקב צוות חינוכי</div>
-        </a>
         <a class="home-tile" onclick="navigate('surveys')">
             <div class="tile-icon">📊</div>
             <div class="tile-title">סקרים ומשובים</div>
             <div class="tile-desc">מילוי סקרים ותוצאות</div>
         </a>
-        <a class="home-tile" onclick="navigate('admin')" id="tile-admin" style="display:none;">
+        <a class="home-tile staff-only" style="display:none;" onclick="navigate('reports')">
+            <div class="tile-icon">📋</div>
+            <div class="tile-title">דיווח שבועי</div>
+            <div class="tile-desc">מעקב צוות חינוכי</div>
+        </a>
+        <a class="home-tile admin-only" id="tile-admin" style="display:none;" onclick="navigate('admin')">
             <div class="tile-icon">⚙️</div>
             <div class="tile-title">ניהול מערכת</div>
             <div class="tile-desc">הגדרות, משתמשים, תכנים</div>
@@ -329,8 +354,8 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 <!-- ====== LEARNING — והגית בו ====== -->
 <div class="page-section" id="page-learning">
     <div class="card">
-        <div class="card-title"><div class="icon">📖</div> תוכניות לימוד יומיות</div>
-        <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:16px;">בחר תוכנית לימוד, עקוב אחרי ההתקדמות שלך, ולמד כל יום.</p>
+        <div class="card-title"><div class="icon">📖</div> והגית בו — תוכניות לימוד יומיות</div>
+        <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:16px;">בחר תוכנית לימוד, עקוב אחרי ההתקדמות שלך, ולמד כל יום. ההתקדמות נשמרת אוטומטית במכשיר שלך.</p>
     </div>
     <div class="program-grid" id="learning-programs"></div>
     <div id="learning-detail" style="display:none;"></div>
@@ -346,7 +371,7 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
         <div class="card" style="text-align:center;padding:40px;color:var(--text-secondary);">
             <div style="font-size:2.5rem;margin-bottom:10px;">⚔️</div>
             <h3>תכנים בהכנה</h3>
-            <p style="font-size:0.85rem;">תכני רוח מכבי להכשרת יסוד יתווספו בקרוב.<br>ניתן להוסיף תכנים דרך ממשק הניהול.</p>
+            <p style="font-size:0.85rem;">תכני רוח מכבי להכשרת יסוד יתווספו בקרוב.</p>
         </div>
     </div>
 </div>
@@ -361,7 +386,7 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
         <div class="card" style="text-align:center;padding:40px;color:var(--text-secondary);">
             <div style="font-size:2.5rem;margin-bottom:10px;">🎖️</div>
             <h3>תכנים בהכנה</h3>
-            <p style="font-size:0.85rem;">תכני רוח מכבי לקורס מ״כים יתווספו בקרוב.<br>ניתן להוסיף תכנים דרך ממשק הניהול.</p>
+            <p style="font-size:0.85rem;">תכני רוח מכבי לקורס מ״כים יתווספו בקרוב.</p>
         </div>
     </div>
 </div>
@@ -376,7 +401,7 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
         <div class="card" style="text-align:center;padding:40px;color:var(--text-secondary);">
             <div style="font-size:2.5rem;margin-bottom:10px;">👨‍✈️</div>
             <h3>תכנים בהכנה</h3>
-            <p style="font-size:0.85rem;">תכני רוח מכבי לקורס קצינים יתווספו בקרוב.<br>ניתן להוסיף תכנים דרך ממשק הניהול.</p>
+            <p style="font-size:0.85rem;">תכני רוח מכבי לקורס קצינים יתווספו בקרוב.</p>
         </div>
     </div>
 </div>
@@ -406,9 +431,8 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
     <div class="survey-list" id="survey-list"></div>
 </div>
 
-<!-- ====== REPORTS (existing system) ====== -->
+<!-- ====== REPORTS (staff only) ====== -->
 <div class="page-section" id="page-reports">
-    <!-- This will contain the existing reporting system -->
     <div id="reports-container"></div>
 </div>
 
@@ -502,6 +526,13 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 </div>
 
     </div><!-- /page-content -->
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+        רוח חשמונאית — עמותת רוח החשמונאים (ע״ר 580814234) ·
+        פותח ע״י <a href="#">IAB-Smart AI Solutions</a>
+    </footer>
+
 </div><!-- /main-content -->
 </div><!-- /app-layout -->
 
@@ -527,19 +558,19 @@ const PROXY_URL = 'https://api.ruach-hashmonaim.org';
 let db = null;
 let currentUser = null;
 
-// Learning programs config
+// Learning programs config with content URLs
 const LEARNING_PROGRAMS = [
-    { id:'chok', name:'חק לישראל', desc:'לימוד יומי מתורה, נביאים, כתובים, משנה, גמרא, הלכה וזוהר', icon:'📜', source:'https://www.sefaria.org.il/Chok_LeYisrael' },
-    { id:'shnayim', name:'שניים מקרא ואחד תרגום', desc:'קריאת פרשת השבוע פעמיים ותרגום אונקלוס', icon:'📕', source:'https://www.sefaria.org.il' },
-    { id:'rambam', name:'רמב״ם יומי', desc:'3 פרקים ביום — סיום משנה תורה בשנה', icon:'⚖️', source:'https://www.chabad.org/dailystudy/rambam.htm' },
-    { id:'halacha', name:'הלכה יומית', desc:'לימוד הלכות מעשיות כל יום', icon:'📘', source:'https://halachayomit.co.il' },
-    { id:'tanya', name:'תניא יומי', desc:'לימוד ספר התניא לפי חלוקה יומית', icon:'🕯️', source:'https://www.chabad.org/dailystudy/tanya.htm' },
-    { id:'mesilat', name:'מסילת ישרים יומי', desc:'לימוד ספר מסילת ישרים של הרמח״ל', icon:'🪜', source:'' },
-    { id:'mishna3', name:'משנה יומית — 3 פרקים', desc:'3 פרקי משניות ביום', icon:'📗', source:'https://www.sefaria.org.il/Mishnah' },
-    { id:'mishna1', name:'משנה יומית — פרק אחד', desc:'פרק משניות אחד ביום', icon:'📗', source:'https://www.sefaria.org.il/Mishnah' },
-    { id:'daf-bavli', name:'דף יומי בבלי', desc:'דף גמרא בבלי אחד ביום — מחזור של 7.5 שנים', icon:'📚', source:'https://www.sefaria.org.il/daf-yomi' },
-    { id:'daf-yerushalmi', name:'דף יומי ירושלמי', desc:'דף גמרא ירושלמי אחד ביום', icon:'📚', source:'https://www.sefaria.org.il' },
-    { id:'tanach', name:'פרק תנ״ך יומי', desc:'פרק תנ״ך אחד כל יום', icon:'🏛️', source:'https://www.sefaria.org.il/Tanakh' }
+    { id:'chok', name:'חק לישראל', desc:'לימוד יומי מתורה, נביאים, כתובים, משנה, גמרא, הלכה וזוהר', icon:'📜', source:'https://www.sefaria.org.il/Chok_LeYisrael', embedUrl:'https://www.sefaria.org.il/Chok_LeYisrael?lang=he' },
+    { id:'shnayim', name:'שניים מקרא ואחד תרגום', desc:'קריאת פרשת השבוע פעמיים ותרגום אונקלוס', icon:'📕', source:'https://www.sefaria.org.il', embedUrl:'https://www.sefaria.org.il/texts/Tanakh?lang=he' },
+    { id:'rambam', name:'רמב״ם יומי', desc:'3 פרקים ביום — סיום משנה תורה בשנה', icon:'⚖️', source:'https://www.chabad.org/dailystudy/rambam.htm', embedUrl:'https://www.chabad.org/dailystudy/rambam.htm' },
+    { id:'halacha', name:'הלכה יומית', desc:'לימוד הלכות מעשיות כל יום', icon:'📘', source:'https://halachayomit.co.il', embedUrl:'https://halachayomit.co.il' },
+    { id:'tanya', name:'תניא יומי', desc:'לימוד ספר התניא לפי חלוקה יומית', icon:'🕯️', source:'https://www.chabad.org/dailystudy/tanya.htm', embedUrl:'https://www.chabad.org/dailystudy/tanya.htm' },
+    { id:'mesilat', name:'מסילת ישרים יומי', desc:'לימוד ספר מסילת ישרים של הרמח״ל', icon:'🪜', source:'https://www.sefaria.org.il/Messilat_Yesharim', embedUrl:'https://www.sefaria.org.il/Messilat_Yesharim?lang=he' },
+    { id:'mishna3', name:'משנה יומית — 3 פרקים', desc:'3 פרקי משניות ביום', icon:'📗', source:'https://www.sefaria.org.il/Mishnah', embedUrl:'https://www.sefaria.org.il/Mishnah?lang=he' },
+    { id:'mishna1', name:'משנה יומית — פרק אחד', desc:'פרק משניות אחד ביום', icon:'📗', source:'https://www.sefaria.org.il/Mishnah', embedUrl:'https://www.sefaria.org.il/Mishnah?lang=he' },
+    { id:'daf-bavli', name:'דף יומי בבלי', desc:'דף גמרא בבלי אחד ביום — מחזור של 7.5 שנים', icon:'📚', source:'https://www.sefaria.org.il/daf-yomi', embedUrl:'https://www.sefaria.org.il/daf-yomi?lang=he' },
+    { id:'daf-yerushalmi', name:'דף יומי ירושלמי', desc:'דף גמרא ירושלמי אחד ביום', icon:'📚', source:'https://www.sefaria.org.il', embedUrl:'https://www.sefaria.org.il/Jerusalem_Talmud?lang=he' },
+    { id:'tanach', name:'פרק תנ״ך יומי', desc:'פרק תנ״ך אחד כל יום', icon:'🏛️', source:'https://www.sefaria.org.il/Tanakh', embedUrl:'https://www.sefaria.org.il/Tanakh?lang=he' }
 ];
 
 // Team categories (for reports)
@@ -551,6 +582,22 @@ const TEAM_CATEGORIES = {
 };
 const ALL_TEAM = Object.values(TEAM_CATEGORIES).flat();
 const CATEGORY_NAMES = { 'a':'ר"מ פלוגתי', 'b':'מפקח ומלווה', 'c':'מרצה חוסן ואמונה', 'd':'מנהל התוכנית' };
+
+// ============================================================
+// LOCAL STORAGE for learning progress (works without login)
+// ============================================================
+function getLocalProgress() {
+    try { return JSON.parse(localStorage.getItem('ruach-learning') || '{}'); } catch(e) { return {}; }
+}
+function setLocalProgress(data) {
+    localStorage.setItem('ruach-learning', JSON.stringify(data));
+}
+function getLocalReminders() {
+    try { return JSON.parse(localStorage.getItem('ruach-reminders') || '{}'); } catch(e) { return {}; }
+}
+function setLocalReminders(data) {
+    localStorage.setItem('ruach-reminders', JSON.stringify(data));
+}
 
 // ============================================================
 // ROUTING
@@ -567,8 +614,18 @@ const PAGE_TITLES = {
     'admin': 'ניהול מערכת'
 };
 
+// Pages that require authentication
+const PROTECTED_PAGES = ['reports', 'admin'];
+
 function navigate(page) {
-    // Update URL hash
+    // Check if page requires login
+    if (PROTECTED_PAGES.includes(page) && !currentUser) {
+        openLoginModal(page);
+        return;
+    }
+    if (page === 'admin' && !currentUser?.isAdmin) {
+        showToast('אין הרשאה'); return;
+    }
     window.location.hash = page;
     activatePage(page);
     closeSidebar();
@@ -585,7 +642,7 @@ function activatePage(page) {
     if (navLink) navLink.classList.add('active');
 
     document.getElementById('page-title').textContent = PAGE_TITLES[page] || '';
-    document.getElementById('page-breadcrumb').textContent = 'רוח החשמונאים' + (page !== 'home' ? ' / ' + (PAGE_TITLES[page] || '') : '');
+    document.getElementById('page-breadcrumb').textContent = 'רוח חשמונאית' + (page !== 'home' ? ' / ' + (PAGE_TITLES[page] || '') : '');
 
     // Load page data
     if (page === 'learning') loadLearningPrograms();
@@ -597,7 +654,11 @@ function activatePage(page) {
 // Handle browser back/forward and direct links
 window.addEventListener('hashchange', () => {
     const page = window.location.hash.slice(1) || 'home';
-    if (currentUser) activatePage(page);
+    if (PROTECTED_PAGES.includes(page) && !currentUser) {
+        openLoginModal(page);
+        return;
+    }
+    activatePage(page);
 });
 
 // ============================================================
@@ -610,6 +671,20 @@ function toggleSidebar() {
 function closeSidebar() {
     document.getElementById('sidebar').classList.remove('open');
     document.getElementById('sidebar-overlay').classList.remove('open');
+}
+
+// ============================================================
+// LOGIN MODAL
+// ============================================================
+let pendingLoginPage = null;
+
+function openLoginModal(redirectPage) {
+    pendingLoginPage = redirectPage || null;
+    document.getElementById('login-modal').classList.add('open');
+}
+function closeLoginModal() {
+    document.getElementById('login-modal').classList.remove('open');
+    pendingLoginPage = null;
 }
 
 // ============================================================
@@ -672,67 +747,84 @@ async function doLogin() {
 }
 
 function onLoginSuccess() {
-    document.getElementById('login-page').style.display = 'none';
-    document.getElementById('app-layout').style.display = 'flex';
-    document.getElementById('mobile-toggle').style.display = '';
+    closeLoginModal();
+
+    // Update sidebar
+    document.getElementById('sidebar-guest').style.display = 'none';
+    document.getElementById('sidebar-user-info').style.display = 'flex';
     document.getElementById('sidebar-username').textContent = currentUser.name;
-    document.getElementById('sidebar-role').textContent = currentUser.isAdmin ? 'מנהל' : 'משתמש';
+    document.getElementById('sidebar-role').textContent = currentUser.isAdmin ? 'מנהל' : 'צוות';
     document.getElementById('sidebar-avatar').textContent = currentUser.name.charAt(0);
-    document.getElementById('home-greeting').textContent = currentUser.name;
+    document.getElementById('home-greeting').textContent = '— ' + currentUser.name;
+
+    // Show staff-only elements
+    document.querySelectorAll('.staff-only').forEach(el => el.style.display = '');
+
     if (currentUser.isAdmin) {
-        document.getElementById('nav-admin').style.display = '';
-        document.getElementById('tile-admin').style.display = '';
+        document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
     }
-    const page = window.location.hash.slice(1) || 'home';
-    activatePage(page);
+
+    // Navigate to pending page or stay on current
+    if (pendingLoginPage) {
+        navigate(pendingLoginPage);
+        pendingLoginPage = null;
+    }
 }
 
 function logout() {
     currentUser = null;
     localStorage.removeItem('ruach-user');
-    document.getElementById('login-page').style.display = '';
-    document.getElementById('app-layout').style.display = 'none';
-    document.getElementById('login-pin').value = '';
-    window.location.hash = '';
+
+    // Update sidebar
+    document.getElementById('sidebar-guest').style.display = '';
+    document.getElementById('sidebar-user-info').style.display = 'none';
+    document.getElementById('home-greeting').textContent = '';
+
+    // Hide staff-only elements
+    document.querySelectorAll('.staff-only').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+
+    // If on a protected page, go home
+    const page = window.location.hash.slice(1) || 'home';
+    if (PROTECTED_PAGES.includes(page)) {
+        navigate('home');
+    }
 }
 
 // ============================================================
-// LEARNING — והגית בו
+// LEARNING — והגית בו (works with localStorage, no login needed)
 // ============================================================
 function loadLearningPrograms() {
     const container = document.getElementById('learning-programs');
     document.getElementById('learning-detail').style.display = 'none';
     container.style.display = '';
-    container.innerHTML = LEARNING_PROGRAMS.map(p => `
+
+    const progress = getLocalProgress();
+    const reminders = getLocalReminders();
+
+    container.innerHTML = LEARNING_PROGRAMS.map(p => {
+        const progData = progress[p.id] || {};
+        const daysCompleted = progData.completedDays ? Object.keys(progData.completedDays).length : 0;
+        const pct = Math.min(100, Math.round((daysCompleted / 30) * 100));
+        const hasReminder = reminders[p.id];
+
+        return `
         <div class="program-card" onclick="openLearningProgram('${p.id}')">
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
                 <span style="font-size:1.5rem;">${p.icon}</span>
-                <h3>${p.name}</h3>
+                <div style="flex:1;">
+                    <h3>${p.name}</h3>
+                    ${hasReminder ? '<span class="reminder-badge">🔔 תזכורת פעילה</span>' : ''}
+                </div>
             </div>
             <p>${p.desc}</p>
-            <div class="progress-bar"><div class="progress-fill" id="prog-${p.id}" style="width:0%"></div></div>
-            <div class="progress-text" id="prog-text-${p.id}">טוען...</div>
-        </div>
-    `).join('');
-    // Load progress for each program
-    LEARNING_PROGRAMS.forEach(p => loadProgress(p.id));
+            <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
+            <div class="progress-text">${daysCompleted} ימי למידה הושלמו</div>
+        </div>`;
+    }).join('');
 }
 
-async function loadProgress(programId) {
-    if (!currentUser || !db) return;
-    try {
-        const doc = await db.collection('learning_progress').doc(currentUser.name + '_' + programId).get();
-        const data = doc.exists ? doc.data() : {};
-        const daysCompleted = data.completedDays ? Object.keys(data.completedDays).length : 0;
-        const pct = Math.min(100, Math.round((daysCompleted / 30) * 100));
-        const bar = document.getElementById('prog-' + programId);
-        const txt = document.getElementById('prog-text-' + programId);
-        if (bar) bar.style.width = pct + '%';
-        if (txt) txt.textContent = daysCompleted + ' ימי למידה הושלמו';
-    } catch(e) { console.warn(e); }
-}
-
-async function openLearningProgram(programId) {
+function openLearningProgram(programId) {
     const prog = LEARNING_PROGRAMS.find(p => p.id === programId);
     if (!prog) return;
 
@@ -740,15 +832,13 @@ async function openLearningProgram(programId) {
     const detail = document.getElementById('learning-detail');
     detail.style.display = 'block';
 
-    // Get progress
-    let completedDays = {};
-    try {
-        const doc = await db.collection('learning_progress').doc(currentUser.name + '_' + programId).get();
-        if (doc.exists && doc.data().completedDays) completedDays = doc.data().completedDays;
-    } catch(e) {}
+    // Get progress from localStorage
+    const allProgress = getLocalProgress();
+    const progData = allProgress[programId] || { completedDays: {} };
+    const completedDays = progData.completedDays || {};
 
     const today = new Date().toISOString().split('T')[0];
-    const todayDone = completedDays[today] || false;
+    const todayDone = !!completedDays[today];
 
     // Get last 7 days
     const days = [];
@@ -759,6 +849,10 @@ async function openLearningProgram(programId) {
         days.push({ key, label: dayNames[d.getDay()], date: d.toLocaleDateString('he-IL',{day:'numeric',month:'short'}), done: !!completedDays[key] });
     }
 
+    // Check reminder status
+    const reminders = getLocalReminders();
+    const hasReminder = reminders[programId];
+
     detail.innerHTML = `
         <div class="card">
             <button class="btn-secondary btn-sm" onclick="loadLearningPrograms()" style="margin-bottom:12px;">← חזרה לתוכניות</button>
@@ -766,10 +860,26 @@ async function openLearningProgram(programId) {
                 <span style="font-size:2rem;">${prog.icon}</span>
                 <div><h2 style="color:var(--primary);font-size:1.1rem;">${prog.name}</h2><p style="font-size:0.85rem;color:var(--text-secondary);">${prog.desc}</p></div>
             </div>
-            ${prog.source ? `<a href="${prog.source}" target="_blank" style="font-size:0.85rem;color:var(--primary-lighter);">📎 מקור התוכן</a>` : ''}
         </div>
+
+        <!-- Daily content access -->
         <div class="card">
-            <h3 style="font-size:0.95rem;margin-bottom:12px;">סימון למידה יומית</h3>
+            <div class="card-title"><div class="icon">📄</div> תוכן הלימוד היומי</div>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:12px;">לחץ על הכפתור כדי לגשת לתוכן הלימוד:</p>
+            <a href="${prog.source || prog.embedUrl}" target="_blank" class="btn-primary" style="display:inline-block;text-decoration:none;">
+                📖 פתח את הלימוד היומי
+            </a>
+            ${prog.embedUrl ? `<div style="margin-top:14px;">
+                <button class="btn-secondary btn-sm" onclick="toggleEmbed('${programId}', '${prog.embedUrl}')">📱 הצג תוכן כאן</button>
+                <div id="embed-${programId}" style="display:none;margin-top:10px;">
+                    <iframe class="content-frame" src="" data-src="${prog.embedUrl}" title="${prog.name}"></iframe>
+                </div>
+            </div>` : ''}
+        </div>
+
+        <!-- Daily tracking -->
+        <div class="card">
+            <div class="card-title"><div class="icon">✅</div> סימון למידה יומית</div>
             <div class="daily-check ${todayDone ? 'done' : ''}" onclick="toggleDayLearning('${programId}','${today}',this)">
                 <div class="check-icon">${todayDone ? '✓' : ''}</div>
                 <div style="flex:1;"><b>היום</b> — ${new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'})}</div>
@@ -782,24 +892,149 @@ async function openLearningProgram(programId) {
                 </div>
             `).join('')}
         </div>
+
+        <!-- Reminder registration -->
+        <div class="reminder-card">
+            <h4>🔔 תזכורות ללימוד יומי</h4>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:10px;">קבל תזכורת יומית ללימוד ${prog.name}</p>
+            ${hasReminder ? `
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="reminder-badge">🔔 תזכורת פעילה</span>
+                    <span style="font-size:0.8rem;color:var(--text-secondary);">${hasReminder.email || 'התראות דפדפן'}</span>
+                    <button class="btn-sm" style="background:none;border:1px solid var(--danger);color:var(--danger);border-radius:6px;cursor:pointer;font-family:inherit;" onclick="removeReminder('${programId}')">ביטול</button>
+                </div>
+            ` : `
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;">
+                    <div style="flex:1;min-width:200px;">
+                        <label style="font-size:0.78rem;font-weight:600;display:block;margin-bottom:4px;">אימייל לקבלת תזכורת:</label>
+                        <input type="email" id="reminder-email-${programId}" placeholder="your@email.com" style="padding:8px 10px;font-size:0.85rem;">
+                    </div>
+                    <button class="btn-primary btn-sm" onclick="registerReminder('${programId}')">הרשמה לתזכורת</button>
+                </div>
+                <button class="btn-secondary btn-sm" style="margin-top:8px;" onclick="enableBrowserReminder('${programId}')">🔔 התראות דפדפן</button>
+            `}
+        </div>
     `;
 }
 
-async function toggleDayLearning(programId, dateKey, el) {
-    if (!currentUser || !db) return;
-    const docRef = db.collection('learning_progress').doc(currentUser.name + '_' + programId);
+function toggleEmbed(programId, url) {
+    const container = document.getElementById('embed-' + programId);
+    if (!container) return;
+    if (container.style.display === 'none') {
+        container.style.display = '';
+        const iframe = container.querySelector('iframe');
+        if (iframe && !iframe.src) iframe.src = iframe.dataset.src;
+    } else {
+        container.style.display = 'none';
+    }
+}
+
+function toggleDayLearning(programId, dateKey, el) {
+    const allProgress = getLocalProgress();
+    if (!allProgress[programId]) allProgress[programId] = { completedDays: {} };
+
     const isDone = el.classList.contains('done');
-    try {
+    if (isDone) {
+        delete allProgress[programId].completedDays[dateKey];
+        el.classList.remove('done');
+        el.querySelector('.check-icon').textContent = '';
+    } else {
+        allProgress[programId].completedDays[dateKey] = true;
+        el.classList.add('done');
+        el.querySelector('.check-icon').textContent = '✓';
+    }
+    setLocalProgress(allProgress);
+
+    // Also sync to Firebase if logged in
+    if (currentUser && db) {
+        const docRef = db.collection('learning_progress').doc(currentUser.name + '_' + programId);
         if (isDone) {
-            await docRef.update({ [`completedDays.${dateKey}`]: firebase.firestore.FieldValue.delete() });
-            el.classList.remove('done');
-            el.querySelector('.check-icon').textContent = '';
+            docRef.update({ [`completedDays.${dateKey}`]: firebase.firestore.FieldValue.delete() }).catch(()=>{});
         } else {
-            await docRef.set({ completedDays: { [dateKey]: true } }, { merge: true });
-            el.classList.add('done');
-            el.querySelector('.check-icon').textContent = '✓';
+            docRef.set({ completedDays: { [dateKey]: true } }, { merge: true }).catch(()=>{});
         }
-    } catch(e) { showToast('שגיאה בשמירה'); console.error(e); }
+    }
+}
+
+// ============================================================
+// REMINDERS
+// ============================================================
+function registerReminder(programId) {
+    const emailInput = document.getElementById('reminder-email-' + programId);
+    const email = emailInput?.value?.trim();
+    if (!email || !email.includes('@')) {
+        showToast('יש להזין כתובת אימייל תקינה');
+        return;
+    }
+
+    const reminders = getLocalReminders();
+    reminders[programId] = { email, type: 'email', createdAt: new Date().toISOString() };
+    setLocalReminders(reminders);
+
+    // Save to Firebase for backend processing
+    if (db) {
+        db.collection('reminders').add({
+            programId,
+            email,
+            type: 'email',
+            userName: currentUser?.name || 'אורח',
+            createdAt: new Date()
+        }).catch(()=>{});
+    }
+
+    showToast('נרשמת לתזכורת יומית!');
+    openLearningProgram(programId); // Refresh
+}
+
+function enableBrowserReminder(programId) {
+    if (!('Notification' in window)) {
+        showToast('הדפדפן לא תומך בהתראות');
+        return;
+    }
+    Notification.requestPermission().then(perm => {
+        if (perm === 'granted') {
+            const reminders = getLocalReminders();
+            reminders[programId] = { type: 'browser', createdAt: new Date().toISOString() };
+            setLocalReminders(reminders);
+            showToast('התראות דפדפן הופעלו!');
+            openLearningProgram(programId);
+        } else {
+            showToast('יש לאשר התראות בדפדפן');
+        }
+    });
+}
+
+function removeReminder(programId) {
+    const reminders = getLocalReminders();
+    delete reminders[programId];
+    setLocalReminders(reminders);
+    showToast('תזכורת בוטלה');
+    openLearningProgram(programId);
+}
+
+// Check and send browser notifications
+function checkBrowserReminders() {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    const reminders = getLocalReminders();
+    const today = new Date().toISOString().split('T')[0];
+    const lastNotified = localStorage.getItem('ruach-last-notify');
+    if (lastNotified === today) return;
+
+    const progress = getLocalProgress();
+    for (const [progId, reminder] of Object.entries(reminders)) {
+        if (reminder.type !== 'browser') continue;
+        const progData = progress[progId] || { completedDays: {} };
+        if (!progData.completedDays[today]) {
+            const prog = LEARNING_PROGRAMS.find(p => p.id === progId);
+            if (prog) {
+                new Notification('רוח חשמונאית — תזכורת לימוד', {
+                    body: `הגיע הזמן ללמוד ${prog.name}!`,
+                    icon: 'icons/icon-192x192.png'
+                });
+            }
+        }
+    }
+    localStorage.setItem('ruach-last-notify', today);
 }
 
 // ============================================================
@@ -809,6 +1044,7 @@ async function loadSurveys() {
     const container = document.getElementById('survey-list');
     container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">טוען סקרים...</p>';
     try {
+        if (!db) { container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-secondary);padding:30px;">אין חיבור לשרת</div>'; return; }
         const snap = await db.collection('surveys').orderBy('createdAt','desc').get();
         if (snap.empty) {
             container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-secondary);padding:30px;">אין סקרים פעילים כרגע</div>';
@@ -984,7 +1220,6 @@ async function loadAdminDashboard() {
     const c = document.getElementById('admin-dashboard-content');
     c.innerHTML = '<div class="card"><h3>דשבורד מנהל</h3><p>טוען נתונים...</p></div>';
     try {
-        // Count users, reports, learning progress
         const users = await db.collection('users').get();
         const reports = await db.collection('reports').get();
         const surveys = await db.collection('surveys').get();
@@ -1003,7 +1238,7 @@ async function loadAdminDashboard() {
 // ============================================================
 function loadReportsPage() {
     const container = document.getElementById('reports-container');
-    if (container.children.length > 0) return; // Already loaded
+    if (container.children.length > 0) return;
     container.innerHTML = `
         <div class="card">
             <div class="card-title"><div class="icon">📋</div> מעקב שבועי — צוות חינוכי</div>
@@ -1025,11 +1260,16 @@ async function waitForFirebase(retries) {
 }
 
 async function initApp() {
+    // Show the app immediately (no login gate)
+    const page = window.location.hash.slice(1) || 'home';
+    if (!PROTECTED_PAGES.includes(page)) {
+        activatePage(page);
+    }
+
     try {
         const ready = await waitForFirebase(8);
         if (!ready) {
-            document.getElementById('filter-warning').style.display = 'block';
-            showToast('שגיאה בטעינת המערכת');
+            console.warn('Firebase not loaded — some features may not work');
             return;
         }
         if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
@@ -1042,11 +1282,10 @@ async function initApp() {
             snap.forEach(doc => {
                 const opt = document.createElement('option');
                 opt.value = doc.id;
-                opt.textContent = doc.id + (doc.data().isAdmin ? ' (מנהל)' : '');
+                opt.textContent = doc.id;
                 select.appendChild(opt);
             });
         } catch(e) {
-            // Fallback — use team list
             ALL_TEAM.concat(['יצחק']).forEach(name => {
                 const opt = document.createElement('option');
                 opt.value = name;
@@ -1056,14 +1295,21 @@ async function initApp() {
         }
     } catch(e) {
         console.error('Init error:', e);
-        document.getElementById('filter-warning').style.display = 'block';
     }
 }
 
 function tryAutoLogin() {
     const saved = localStorage.getItem('ruach-user');
     if (saved) {
-        try { currentUser = JSON.parse(saved); onLoginSuccess(); return; } catch(e) {}
+        try {
+            currentUser = JSON.parse(saved);
+            onLoginSuccess();
+            // If we were on a protected page, now navigate there
+            const page = window.location.hash.slice(1) || 'home';
+            if (PROTECTED_PAGES.includes(page)) {
+                activatePage(page);
+            }
+        } catch(e) {}
     }
 }
 
@@ -1076,7 +1322,10 @@ function showLoading(show) { document.getElementById('loading').style.display = 
 // ============================================================
 // START
 // ============================================================
-initApp().then(() => setTimeout(tryAutoLogin, 300));
+initApp().then(() => {
+    setTimeout(tryAutoLogin, 300);
+    setTimeout(checkBrowserReminders, 2000);
+});
 
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW:', e));
