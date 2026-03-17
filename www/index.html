@@ -143,10 +143,29 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 .reminder-badge { display:inline-flex; align-items:center; gap:4px; background:var(--success); color:#fff; padding:4px 10px; border-radius:12px; font-size:0.75rem; font-weight:600; }
 
 /* SURVEY */
-.survey-list .survey-item { display:flex; align-items:center; justify-content:space-between; padding:14px; border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px; background:#fff; }
-.survey-item .survey-title { font-weight:600; font-size:0.9rem; }
+.survey-list .survey-item { display:flex; align-items:center; gap:14px; padding:16px; border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; background:#fff; cursor:pointer; transition:all 0.2s; }
+.survey-item:hover { border-color:var(--accent); box-shadow:var(--shadow); transform:translateY(-1px); }
+.survey-item .survey-icon { width:48px; height:48px; border-radius:12px; background:linear-gradient(135deg,var(--accent),var(--accent-light)); color:var(--primary); display:flex; align-items:center; justify-content:center; font-size:1.3rem; flex-shrink:0; }
+.survey-item .survey-info { flex:1; }
+.survey-item .survey-title { font-weight:700; font-size:0.95rem; color:var(--primary); margin-bottom:2px; }
 .survey-item .survey-meta { font-size:0.78rem; color:var(--text-secondary); }
+.survey-item .survey-actions { display:flex; gap:6px; flex-shrink:0; }
 .survey-item .btn-fill { background:var(--accent); color:var(--primary); border:none; padding:8px 18px; border-radius:6px; font-family:inherit; font-weight:600; cursor:pointer; font-size:0.85rem; }
+.btn-fill:hover { filter:brightness(1.05); }
+.survey-embed-frame { width:100%; min-height:700px; border:none; border-radius:var(--radius-sm); }
+.survey-tab { display:inline-flex; align-items:center; gap:6px; padding:10px 18px; border:2px solid var(--border); border-radius:20px; font-size:0.88rem; font-weight:600; cursor:pointer; background:#fff; font-family:inherit; transition:all 0.2s; }
+.survey-tab:hover { border-color:var(--primary-lighter); }
+.survey-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+.response-card { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
+.response-card .resp-q { font-size:0.82rem; font-weight:600; color:var(--primary); margin-bottom:4px; }
+.response-card .resp-a { font-size:0.88rem; color:var(--text); padding:8px 12px; background:#FAFAF8; border-radius:var(--radius-sm); border-right:3px solid var(--accent); }
+.response-summary { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:16px; }
+.response-stat { text-align:center; padding:14px; background:#fff; border-radius:var(--radius); border:1px solid var(--border); }
+.response-stat .stat-num { font-size:1.8rem; font-weight:800; color:var(--primary); }
+.response-stat .stat-label { font-size:0.78rem; color:var(--text-secondary); }
+.share-box { display:flex; align-items:center; gap:8px; background:#FAFAF8; padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border); }
+.share-box input { flex:1; border:none; background:none; font-family:inherit; font-size:0.85rem; color:var(--text); direction:ltr; }
+.share-box button { background:var(--primary); color:#fff; border:none; padding:6px 14px; border-radius:6px; cursor:pointer; font-family:inherit; font-size:0.82rem; font-weight:600; white-space:nowrap; }
 
 /* TRAINING */
 .training-module { background:#fff; border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
@@ -483,10 +502,53 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
 
 <!-- ====== SURVEYS ====== -->
 <div class="page-section" id="page-surveys">
-    <div class="card">
-        <div class="card-title"><div class="icon">📊</div> סקרים ומשובים</div>
+    <!-- Survey list view -->
+    <div id="survey-list-view">
+        <div class="card">
+            <div class="card-title"><div class="icon">📊</div> סקרים ומשובים</div>
+            <p style="font-size:0.88rem;color:var(--text-secondary);">מלא סקרים, צפה בתוצאות ושתף קישורים ישירים.</p>
+        </div>
+        <div class="survey-list" id="survey-list"></div>
     </div>
-    <div class="survey-list" id="survey-list"></div>
+
+    <!-- Survey detail view (embedded form + results) -->
+    <div id="survey-detail-view" style="display:none;">
+        <div class="card">
+            <button class="btn-secondary btn-sm" onclick="closeSurveyDetail()" style="margin-bottom:12px;">← חזרה לרשימת הסקרים</button>
+            <h2 style="color:var(--primary);font-size:1.1rem;" id="survey-detail-title"></h2>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;" id="survey-detail-desc"></p>
+
+            <!-- Share link -->
+            <div class="share-box" style="margin-top:12px;">
+                <span style="font-size:0.85rem;">🔗</span>
+                <input type="text" id="survey-share-link" readonly>
+                <button onclick="copySurveyLink()">העתק קישור</button>
+            </div>
+        </div>
+
+        <!-- Tabs: fill / results -->
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+            <button class="survey-tab active" id="survey-tab-fill" onclick="showSurveyTab('fill')">📝 מילוי הסקר</button>
+            <button class="survey-tab" id="survey-tab-results" onclick="showSurveyTab('results')">📈 תוצאות</button>
+        </div>
+
+        <!-- Fill tab -->
+        <div id="survey-fill-panel">
+            <div class="card" style="padding:0;overflow:hidden;">
+                <iframe id="survey-embed-iframe" class="survey-embed-frame" src="" title="סקר"></iframe>
+            </div>
+        </div>
+
+        <!-- Results tab -->
+        <div id="survey-results-panel" style="display:none;">
+            <div class="response-summary" id="survey-results-summary"></div>
+            <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+                <button class="btn-primary btn-sm" onclick="exportSurveyToExcel()">📥 ייצוא לאקסל</button>
+                <button class="btn-secondary btn-sm" onclick="refreshSurveyResults()">🔄 רענן תוצאות</button>
+            </div>
+            <div id="survey-results-content"></div>
+        </div>
+    </div>
 </div>
 
 <!-- ====== REPORTS (staff only) ====== -->
@@ -538,7 +600,8 @@ select { background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.or
             <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;">
                 <h4 style="margin-bottom:8px;">הוספת סקר חדש</h4>
                 <div class="form-group"><label>שם הסקר</label><input type="text" id="new-survey-title" placeholder="לדוגמא: סקר שביעות רצון"></div>
-                <div class="form-group"><label>קישור Google Form</label><input type="text" id="new-survey-url" placeholder="https://forms.gle/..."></div>
+                <div class="form-group"><label>קישור Google Form (למילוי)</label><input type="text" id="new-survey-url" placeholder="https://forms.gle/..."></div>
+                <div class="form-group"><label>קישור Google Sheet לתוצאות (אופציונלי)</label><input type="text" id="new-survey-sheet" placeholder="https://docs.google.com/spreadsheets/d/.../edit"></div>
                 <div class="form-group"><label>תיאור</label><textarea id="new-survey-desc" rows="2" placeholder="תיאור קצר..."></textarea></div>
                 <button class="btn-primary btn-sm" onclick="addSurvey()">הוסף סקר</button>
             </div>
@@ -690,6 +753,23 @@ function navigate(page) {
 }
 
 function activatePage(page) {
+    // Handle deep links: #survey/DOCID
+    if (page.startsWith('survey/')) {
+        const surveyId = page.split('/')[1];
+        page = 'surveys';
+        document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+        const el = document.getElementById('page-surveys');
+        if (el) el.classList.add('active');
+        const navLink = document.querySelector('.sidebar-nav a[data-page="surveys"]');
+        if (navLink) navLink.classList.add('active');
+        document.getElementById('page-title').textContent = 'סקרים ומשובים';
+        document.getElementById('page-breadcrumb').textContent = 'רוח חשמונאית / סקרים ומשובים';
+        // Load surveys then open the specific one
+        loadSurveys().then(() => openSurveyById(surveyId));
+        return;
+    }
+
     document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
     document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
 
@@ -713,8 +793,9 @@ function activatePage(page) {
 // Handle browser back/forward and direct links
 window.addEventListener('hashchange', () => {
     const page = window.location.hash.slice(1) || 'home';
-    if (PROTECTED_PAGES.includes(page) && !currentUser) {
-        openLoginModal(page);
+    const basePage = page.split('/')[0];
+    if (PROTECTED_PAGES.includes(basePage) && !currentUser) {
+        openLoginModal(basePage);
         return;
     }
     activatePage(page);
@@ -1402,32 +1483,376 @@ function catColor(cat) {
 }
 
 // ============================================================
-// SURVEYS
+// SURVEYS — Full featured with embed, results viewer, export
 // ============================================================
+const GOOGLE_FORM_ID = '1FAIpQLScv2No0LmCViJzNHdVKcWSEzbcY9M5rF69zUTnQISaHgAUZPQ';
+const DEFAULT_SURVEY = {
+    title: 'משוב מסע פיקוד — קמ״כ חשמונאים',
+    url: 'https://docs.google.com/forms/d/e/' + GOOGLE_FORM_ID + '/viewform',
+    description: 'משוב אנונימי על חוויית מסע הפיקוד — מדריכים, סדנאות, אתרים ואירועים',
+    embedUrl: 'https://docs.google.com/forms/d/e/' + GOOGLE_FORM_ID + '/viewform?embedded=true',
+    sheetUrl: '',
+    questions: [
+        { q: 'צוות', type: 'choice', options: ['צוות סדיר', 'צוות מילואים'] },
+        { q: 'חוויה עם מדריכי המסע — חוזקות וחולשות', type: 'text' },
+        { q: 'השפעת שיחות המפקד והרב אריה ספירא על תפיסת הפיקוד', type: 'text' },
+        { q: 'השפעת סדנת התקשורת והמסר המרכזי', type: 'text' },
+        { q: 'תרגילי מפקדנות — תועלת וחסרונות', type: 'text' },
+        { q: 'מפגש מוזיקאי ומפגש רס"ר — רגע משמעותי', type: 'text' },
+        { q: 'הערכת לוגיסטיקה ומנהלה והצעות לשיפור', type: 'text' },
+        { q: 'מסר ערכי שהדהד מאתרי המסע (תל עזקה, חלחול, כסתל וכו׳)', type: 'text' },
+        { q: 'כיצד אירועים היסטוריים עיצבו את הבנת תפקיד המפקד בצה"ל', type: 'text' },
+        { q: 'ערך אחד לפיתוח (אחריות, דוגמא אישית, מקצועיות, מסירות, ענווה, משימתיות)', type: 'text' },
+        { q: 'רגע של תובנה אישית — מהיסטוריה להתבוננות עצמית', type: 'text' },
+        { q: 'הערות חופשיות', type: 'text' }
+    ]
+};
+
+let surveyCache = [];
+let currentSurveyDoc = null;
+
 async function loadSurveys() {
     const container = document.getElementById('survey-list');
     container.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">טוען סקרים...</p>';
+
+    surveyCache = [];
+
+    // Always show the default survey first
+    surveyCache.push({ id: 'default', ...DEFAULT_SURVEY });
+
+    // Load additional surveys from Firebase
     try {
-        if (!db) { container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-secondary);padding:30px;">אין חיבור לשרת</div>'; return; }
-        const snap = await db.collection('surveys').orderBy('createdAt','desc').get();
-        if (snap.empty) {
-            container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-secondary);padding:30px;">אין סקרים פעילים כרגע</div>';
-            return;
+        if (db) {
+            const snap = await db.collection('surveys').orderBy('createdAt','desc').get();
+            snap.forEach(doc => {
+                const s = doc.data();
+                surveyCache.push({ id: doc.id, ...s });
+            });
         }
-        container.innerHTML = '';
-        snap.forEach(doc => {
-            const s = doc.data();
-            container.innerHTML += `
-                <div class="survey-item">
-                    <div>
-                        <div class="survey-title">${s.title || 'סקר'}</div>
-                        <div class="survey-meta">${s.description || ''}</div>
-                    </div>
-                    <a href="${s.url}" target="_blank" class="btn-fill">מלא סקר</a>
+    } catch(e) { console.warn('Could not load surveys from Firebase:', e); }
+
+    renderSurveyList();
+}
+
+function renderSurveyList() {
+    const container = document.getElementById('survey-list');
+    document.getElementById('survey-list-view').style.display = '';
+    document.getElementById('survey-detail-view').style.display = 'none';
+
+    if (surveyCache.length === 0) {
+        container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-secondary);padding:30px;">אין סקרים פעילים כרגע</div>';
+        return;
+    }
+
+    container.innerHTML = surveyCache.map((s, i) => `
+        <div class="survey-item" onclick="openSurveyDetail(${i})">
+            <div class="survey-icon">📋</div>
+            <div class="survey-info">
+                <div class="survey-title">${s.title || 'סקר'}</div>
+                <div class="survey-meta">${s.description || ''}</div>
+            </div>
+            <div class="survey-actions">
+                <button class="btn-fill" onclick="event.stopPropagation();openSurveyDetail(${i})">פתח</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+function openSurveyDetail(index) {
+    const survey = surveyCache[index];
+    if (!survey) return;
+    currentSurveyDoc = survey;
+
+    document.getElementById('survey-list-view').style.display = 'none';
+    document.getElementById('survey-detail-view').style.display = '';
+
+    document.getElementById('survey-detail-title').textContent = survey.title;
+    document.getElementById('survey-detail-desc').textContent = survey.description || '';
+
+    // Set share link
+    const baseUrl = window.location.origin + window.location.pathname;
+    const shareLink = baseUrl + '#survey/' + survey.id;
+    document.getElementById('survey-share-link').value = shareLink;
+
+    // Update hash
+    window.history.replaceState(null, '', '#survey/' + survey.id);
+
+    // Embed the form
+    const embedUrl = survey.embedUrl || survey.url + '?embedded=true';
+    document.getElementById('survey-embed-iframe').src = embedUrl;
+
+    // Show fill tab by default
+    showSurveyTab('fill');
+
+    // Load results
+    loadSurveyResults(survey);
+}
+
+function openSurveyById(surveyId) {
+    const index = surveyCache.findIndex(s => s.id === surveyId);
+    if (index >= 0) {
+        openSurveyDetail(index);
+    } else {
+        // Try default
+        if (surveyId === 'default' && surveyCache.length > 0) {
+            openSurveyDetail(0);
+        }
+    }
+}
+
+function closeSurveyDetail() {
+    document.getElementById('survey-list-view').style.display = '';
+    document.getElementById('survey-detail-view').style.display = 'none';
+    document.getElementById('survey-embed-iframe').src = '';
+    currentSurveyDoc = null;
+    window.history.replaceState(null, '', '#surveys');
+}
+
+function showSurveyTab(tab) {
+    document.getElementById('survey-tab-fill').classList.toggle('active', tab === 'fill');
+    document.getElementById('survey-tab-results').classList.toggle('active', tab === 'results');
+    document.getElementById('survey-fill-panel').style.display = tab === 'fill' ? '' : 'none';
+    document.getElementById('survey-results-panel').style.display = tab === 'results' ? '' : 'none';
+}
+
+function copySurveyLink() {
+    const input = document.getElementById('survey-share-link');
+    input.select();
+    navigator.clipboard.writeText(input.value).then(() => showToast('הקישור הועתק!')).catch(() => {
+        document.execCommand('copy');
+        showToast('הקישור הועתק!');
+    });
+}
+
+// ============================================================
+// SURVEY RESULTS — loads from Firebase responses collection + Google Sheets
+// ============================================================
+let surveyResultsData = [];
+
+async function loadSurveyResults(survey) {
+    const summaryEl = document.getElementById('survey-results-summary');
+    const contentEl = document.getElementById('survey-results-content');
+    surveyResultsData = [];
+
+    summaryEl.innerHTML = '';
+    contentEl.innerHTML = '<p style="text-align:center;color:var(--text-secondary);">טוען תוצאות...</p>';
+
+    // Try loading from Firebase responses collection
+    if (db) {
+        try {
+            const surveyKey = survey.id === 'default' ? 'masaa-pikud' : survey.id;
+            const snap = await db.collection('survey_responses').where('surveyId','==',surveyKey).orderBy('submittedAt','desc').get();
+            snap.forEach(doc => surveyResultsData.push({ id: doc.id, ...doc.data() }));
+        } catch(e) { console.warn('Could not load responses:', e); }
+    }
+
+    // Try loading from Google Sheet if URL is set
+    if (survey.sheetUrl) {
+        try {
+            const sheetData = await loadGoogleSheetData(survey.sheetUrl);
+            if (sheetData.length > 0) {
+                surveyResultsData = sheetData;
+            }
+        } catch(e) { console.warn('Could not load sheet data:', e); }
+    }
+
+    renderSurveyResults(survey);
+}
+
+async function loadGoogleSheetData(sheetUrl) {
+    // Convert Google Sheets URL to CSV export URL
+    const match = sheetUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+    if (!match) return [];
+    const sheetId = match[1];
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+
+    try {
+        const response = await fetch(csvUrl);
+        if (!response.ok) return [];
+        const csvText = await response.text();
+        return parseCSV(csvText);
+    } catch(e) { return []; }
+}
+
+function parseCSV(csvText) {
+    const lines = csvText.split('\n');
+    if (lines.length < 2) return [];
+    const headers = parseCSVLine(lines[0]);
+    const rows = [];
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const vals = parseCSVLine(lines[i]);
+        const row = { _raw: {} };
+        headers.forEach((h, idx) => { row._raw[h] = vals[idx] || ''; });
+        row.submittedAt = vals[0] || '';
+        rows.push(row);
+    }
+    return rows;
+}
+
+function parseCSVLine(line) {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { inQuotes = !inQuotes; }
+        else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }
+        else { current += ch; }
+    }
+    result.push(current.trim());
+    return result;
+}
+
+function renderSurveyResults(survey) {
+    const summaryEl = document.getElementById('survey-results-summary');
+    const contentEl = document.getElementById('survey-results-content');
+    const questions = survey.questions || DEFAULT_SURVEY.questions;
+
+    const totalResponses = surveyResultsData.length;
+
+    summaryEl.innerHTML = `
+        <div class="response-stat">
+            <div class="stat-num">${totalResponses}</div>
+            <div class="stat-label">תשובות שהתקבלו</div>
+        </div>
+        ${questions[0]?.type === 'choice' ? (() => {
+            const counts = {};
+            (questions[0].options || []).forEach(o => counts[o] = 0);
+            surveyResultsData.forEach(r => {
+                const val = r._raw ? Object.values(r._raw)[1] : r.answers?.[0];
+                if (val && counts[val] !== undefined) counts[val]++;
+            });
+            return Object.entries(counts).map(([k,v]) => `
+                <div class="response-stat">
+                    <div class="stat-num">${v}</div>
+                    <div class="stat-label">${k}</div>
                 </div>
-            `;
+            `).join('');
+        })() : ''}
+    `;
+
+    if (totalResponses === 0) {
+        contentEl.innerHTML = `
+            <div class="card" style="text-align:center;padding:30px;">
+                <div style="font-size:2.5rem;margin-bottom:10px;">📭</div>
+                <h3 style="color:var(--text-secondary);">טרם התקבלו תשובות</h3>
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:8px;">
+                    שלח את הקישור הייעודי למשיבים, או קשר Google Sheet לסקר כדי לצפות בתוצאות כאן.
+                </p>
+                ${currentUser?.isAdmin ? `<p style="font-size:0.82rem;color:var(--primary);margin-top:12px;">
+                    <b>מנהל:</b> ניתן לקשר Google Sheet בניהול סקרים (טאב ניהול מערכת → סקרים).
+                </p>` : ''}
+            </div>
+        `;
+        return;
+    }
+
+    // Render each response as a card
+    let html = '';
+    surveyResultsData.forEach((resp, idx) => {
+        const timestamp = resp.submittedAt || resp._raw?.['חותמת זמן'] || '';
+        html += `<div class="response-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <b style="font-size:0.85rem;color:var(--primary);">תשובה #${idx + 1}</b>
+                <span style="font-size:0.72rem;color:var(--text-secondary);">${timestamp}</span>
+            </div>`;
+
+        if (resp._raw) {
+            // From Google Sheets
+            const keys = Object.keys(resp._raw);
+            keys.forEach((key, ki) => {
+                if (ki === 0 && key.includes('חותמת')) return; // Skip timestamp column
+                const val = resp._raw[key];
+                if (!val) return;
+                html += `<div style="margin-bottom:8px;">
+                    <div class="resp-q">${key}</div>
+                    <div class="resp-a">${val}</div>
+                </div>`;
+            });
+        } else if (resp.answers) {
+            // From Firebase
+            questions.forEach((q, qi) => {
+                const val = resp.answers[qi];
+                if (!val) return;
+                html += `<div style="margin-bottom:8px;">
+                    <div class="resp-q">${q.q}</div>
+                    <div class="resp-a">${val}</div>
+                </div>`;
+            });
+        }
+        html += '</div>';
+    });
+
+    contentEl.innerHTML = html;
+}
+
+function refreshSurveyResults() {
+    if (currentSurveyDoc) {
+        showToast('מרענן תוצאות...');
+        loadSurveyResults(currentSurveyDoc);
+    }
+}
+
+// ============================================================
+// EXCEL EXPORT (using SheetJS CDN)
+// ============================================================
+async function exportSurveyToExcel() {
+    if (surveyResultsData.length === 0) {
+        showToast('אין נתונים לייצוא');
+        return;
+    }
+
+    showLoading(true);
+
+    // Load SheetJS if not already loaded
+    if (typeof XLSX === 'undefined') {
+        await new Promise((resolve, reject) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+            s.onload = resolve;
+            s.onerror = reject;
+            document.head.appendChild(s);
         });
-    } catch(e) { container.innerHTML = '<p style="color:var(--danger);">שגיאה בטעינת סקרים</p>'; }
+    }
+
+    try {
+        const survey = currentSurveyDoc || DEFAULT_SURVEY;
+        const questions = survey.questions || DEFAULT_SURVEY.questions;
+
+        // Build rows
+        const headers = ['#', 'תאריך', ...questions.map(q => q.q)];
+        const rows = surveyResultsData.map((resp, idx) => {
+            const row = [idx + 1, resp.submittedAt || resp._raw?.['חותמת זמן'] || ''];
+            if (resp._raw) {
+                const keys = Object.keys(resp._raw);
+                keys.forEach((key, ki) => {
+                    if (ki === 0 && key.includes('חותמת')) return;
+                    row.push(resp._raw[key] || '');
+                });
+            } else if (resp.answers) {
+                questions.forEach((q, qi) => row.push(resp.answers?.[qi] || ''));
+            }
+            return row;
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+        // Set column widths
+        ws['!cols'] = headers.map((h, i) => ({ wch: i < 2 ? 12 : 35 }));
+
+        // RTL
+        if (!ws['!sheetViews']) ws['!sheetViews'] = [{}];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'תוצאות');
+        XLSX.writeFile(wb, (survey.title || 'סקר') + ' — תוצאות.xlsx');
+        showToast('הקובץ יורד...');
+    } catch(e) {
+        console.error('Export error:', e);
+        showToast('שגיאה בייצוא');
+    }
+    showLoading(false);
 }
 
 // ============================================================
@@ -1501,13 +1926,22 @@ async function addSurvey() {
     const title = document.getElementById('new-survey-title').value.trim();
     const url = document.getElementById('new-survey-url').value.trim();
     const desc = document.getElementById('new-survey-desc').value.trim();
+    const sheetUrl = document.getElementById('new-survey-sheet')?.value?.trim() || '';
     if (!title || !url) { showToast('יש למלא שם וקישור'); return; }
+
+    // Auto-detect embed URL from Google Forms URL
+    let embedUrl = '';
+    const formMatch = url.match(/forms\/d\/e\/([a-zA-Z0-9_-]+)/);
+    if (formMatch) embedUrl = 'https://docs.google.com/forms/d/e/' + formMatch[1] + '/viewform?embedded=true';
+    else if (url.includes('forms.gle')) embedUrl = url; // will redirect
+
     try {
-        await db.collection('surveys').add({ title, url, description: desc, createdAt: new Date() });
+        await db.collection('surveys').add({ title, url, embedUrl, sheetUrl, description: desc, createdAt: new Date() });
         showToast('סקר נוסף');
         document.getElementById('new-survey-title').value = '';
         document.getElementById('new-survey-url').value = '';
         document.getElementById('new-survey-desc').value = '';
+        if (document.getElementById('new-survey-sheet')) document.getElementById('new-survey-sheet').value = '';
     } catch(e) { showToast('שגיאה'); }
 }
 
