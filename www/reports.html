@@ -195,8 +195,10 @@
         .ai-summary-box { background: linear-gradient(135deg, #EDE7F6 0%, #E8EAF6 100%); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; border: 1px solid #D1C4E9; }
         .ai-summary-box .title { font-weight: 700; color: #5E35B1; margin-bottom: 8px; font-size: 0.9rem; }
         .ai-summary-box .content { font-size: 0.88rem; line-height: 1.7; white-space: pre-wrap; }
-        .btn-ai { background: linear-gradient(135deg, #7E57C2, #5E35B1); color: white; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-ai { background: linear-gradient(135deg, #7E57C2, #5E35B1); color: white; border: none; padding: 10px 20px; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s; width:100%; }
         .btn-ai:hover { transform: translateY(-1px); }
+        .btn-export { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); padding: 7px 14px; border-radius: var(--radius-sm); font-family: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-export:hover { background: var(--primary); color: #fff; }
 
         /* PAYMENT */
         .payment-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 10px; }
@@ -371,7 +373,7 @@
         <div class="card">
             <div class="card-title"><div class="icon">📝</div> דיווח מהותי</div>
             <div class="form-group"><label>נושאי הלימוד השבוע</label><textarea id="a-topics" placeholder="נושאי לימוד עיקריים..."></textarea></div>
-            <div class="form-group"><label>אווירה ומצב רוח בפלוגה</label><textarea id="a-mood" placeholder="תיאור האווירה הכללית..."></textarea></div>
+            <div class="form-group"><label>אווירה ומצב הרוח בקרב חיילי הפלוגה</label><textarea id="a-mood" placeholder="כיצד החיילים מתמודדים עם אתגרי השירות וכד׳..."></textarea></div>
             <div class="form-group"><label>דילמות/אתגרים שעלו</label><textarea id="a-challenges" placeholder="דילמות, אתגרים, וסוגיות..."></textarea></div>
             <div class="form-group"><label>הערות נוספות</label><textarea id="a-notes" placeholder="נקודות נוספות הדורשות התייחסות..."></textarea></div>
         </div>
@@ -492,9 +494,55 @@
     </div>
 
     <div style="margin-bottom:14px;" id="dash-ai-btn">
-        <button class="btn-ai" onclick="generateAISummary()">סיכום AI לתקופה</button>
+        <button class="btn-ai" onclick="generateAISummary()">✨ סיכום אוטומטי לתקופה</button>
+        <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;">
+            <button class="btn-export" onclick="openExportModal('all')">📤 ייצוא כל הדיווחים ל-AI</button>
+            <button class="btn-export" onclick="openExportModal('single')">📤 ייצוא דיווח בודד</button>
+            <button class="btn-export" onclick="openExportModal('question')">📤 ייצוא שאלה אחת מכולם</button>
+        </div>
     </div>
     <div id="ai-summary-container"></div>
+
+    <!-- Export to AI Modal -->
+    <div id="export-modal" style="display:none;" class="card" style="margin-bottom:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h3 style="font-size:1rem;color:var(--primary);">📤 ייצוא לניתוח AI</h3>
+            <button onclick="closeExportModal()" style="background:none;border:none;font-size:1.2rem;cursor:pointer;">&times;</button>
+        </div>
+
+        <!-- Export type: single report picker -->
+        <div id="export-single-picker" style="display:none;margin-bottom:12px;">
+            <label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px;">בחר דיווח:</label>
+            <select id="export-single-select" onchange="updateExportPreview()" style="margin-bottom:8px;"></select>
+        </div>
+
+        <!-- Export type: single question picker -->
+        <div id="export-question-picker" style="display:none;margin-bottom:12px;">
+            <label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px;">בחר שאלה:</label>
+            <select id="export-question-select" onchange="updateExportPreview()">
+                <option value="mood">אווירה ומצב הרוח בקרב חיילי הפלוגה</option>
+                <option value="topics">נושאי הלימוד השבוע</option>
+                <option value="challenges">דילמות/אתגרים שעלו</option>
+                <option value="notes">הערות נוספות</option>
+                <option value="quantNotes">הערות כמותיות</option>
+                <option value="insights">תובנות ותהליכים משמעותיים</option>
+                <option value="fieldChallenges">אתגרים בשטח</option>
+                <option value="resilience">חוסן ואמונה</option>
+                <option value="goals">יעדים להמשך</option>
+            </select>
+        </div>
+
+        <!-- Preview -->
+        <div style="margin-bottom:12px;">
+            <label style="font-weight:600;font-size:0.85rem;display:block;margin-bottom:4px;">תוכן שייוצא + פרומפט AI:</label>
+            <textarea id="export-preview" rows="12" style="font-size:0.82rem;direction:rtl;white-space:pre-wrap;line-height:1.5;" readonly></textarea>
+        </div>
+
+        <div style="display:flex;gap:8px;">
+            <button class="btn-primary" onclick="copyExportToClipboard()" style="flex:1;">📋 העתק ללוח — הדבק בכלי AI</button>
+        </div>
+        <p style="font-size:0.75rem;color:var(--text-secondary);margin-top:8px;text-align:center;">העתק את התוכן והדבק אותו ב-ChatGPT / Claude / Gemini או כל כלי AI אחר</p>
+    </div>
 
     <div id="dash-team-cards"></div>
 </div>
@@ -1048,7 +1096,7 @@ function renderReportBody(r, cat) {
         h += detailItem('שעות ת"ש', r.tashHours, 'יעד: 2', r.targets?.tash?.met);
         h += detailItem('שיחות אישיות', r.personalConversations, 'יעד חודשי: 16');
         h += '</div>';
-        h += qualSection([['הערות כמותיות', r.quantNotes], ['נושאי לימוד', r.topics], ['אווירה ומצב רוח', r.mood], ['דילמות/אתגרים', r.challenges], ['הערות נוספות', r.notes]]);
+        h += qualSection([['הערות כמותיות', r.quantNotes], ['נושאי לימוד', r.topics], ['אווירה ומצב הרוח בקרב חיילי הפלוגה', r.mood], ['דילמות/אתגרים', r.challenges], ['הערות נוספות', r.notes]]);
     } else if (cat === 'b') {
         h += '<div class="detail-grid">';
         h += detailItem('שעות ליווי ר"מים', r.accompanyHours);
@@ -1253,6 +1301,129 @@ function generateAISummary() {
     }
 
     document.getElementById('ai-summary-container').innerHTML = `<div class="ai-summary-box"><div class="title">✨ סיכום אוטומטי</div><div class="content">${summary}</div></div>`;
+}
+
+// ============================================================
+// EXPORT TO AI — ייצוא דיווחים לניתוח בכלי AI חיצוני
+// ============================================================
+let exportMode = 'all';
+
+const AI_PROMPT = `סכם לי את העולה מהדיווחים הבאים והצג לי:
+1. סיכום כללי של המצב
+2. המלצות לפעולה
+3. נקודות חריגות הנדרשות לבירור
+4. נקודות לחיוב
+5. נקודות לשלילה
+6. נקודות למיקוד להמשך
+
+הדיווחים:
+`;
+
+const QUESTION_LABELS = {
+    mood: 'אווירה ומצב הרוח בקרב חיילי הפלוגה',
+    topics: 'נושאי הלימוד השבוע',
+    challenges: 'דילמות/אתגרים שעלו',
+    notes: 'הערות נוספות',
+    quantNotes: 'הערות כמותיות',
+    insights: 'תובנות ותהליכים משמעותיים',
+    fieldChallenges: 'אתגרים בשטח',
+    resilience: 'חוסן ואמונה',
+    goals: 'יעדים להמשך'
+};
+
+function openExportModal(mode) {
+    exportMode = mode;
+    const reports = window._dashReports || [];
+    if (!reports.length) { showToast('אין דיווחים לייצוא'); return; }
+
+    document.getElementById('export-modal').style.display = '';
+    document.getElementById('export-single-picker').style.display = mode === 'single' ? '' : 'none';
+    document.getElementById('export-question-picker').style.display = mode === 'question' ? '' : 'none';
+
+    // Populate single report picker
+    if (mode === 'single') {
+        const sel = document.getElementById('export-single-select');
+        sel.innerHTML = reports.map((r, i) => `<option value="${i}">${r.person} — ${r.weekStart || 'לא ידוע'}</option>`).join('');
+    }
+
+    updateExportPreview();
+}
+
+function closeExportModal() {
+    document.getElementById('export-modal').style.display = 'none';
+}
+
+function formatReportForExport(r) {
+    let text = `=== דיווח: ${r.person} | שבוע: ${r.weekStart || 'לא ידוע'} ===\n`;
+    if (r.category === 'a') {
+        text += `סוג: ר"מ פלוגתי\n`;
+        text += `שעות נוכחות: ${r.totalHours || 0} (יעד: 18)\n`;
+        text += `ימי נוכחות: ${r.presenceDays?.length || 0} (יעד: 3)\n`;
+        text += `שעות לימוד: ${r.teachingHours || 0} (יעד: 3)\n`;
+        text += `שיחות אישיות: ${r.personalConversations || 0}\n`;
+        if (r.quantNotes) text += `הערות כמותיות: ${r.quantNotes}\n`;
+        if (r.topics) text += `נושאי לימוד: ${r.topics}\n`;
+        if (r.mood) text += `אווירה ומצב הרוח: ${r.mood}\n`;
+        if (r.challenges) text += `דילמות/אתגרים: ${r.challenges}\n`;
+        if (r.notes) text += `הערות: ${r.notes}\n`;
+    } else if (r.category === 'b') {
+        text += `סוג: מפקח ומלווה\n`;
+        if (r.insights) text += `תובנות: ${r.insights}\n`;
+        if (r.fieldChallenges) text += `אתגרים בשטח: ${r.fieldChallenges}\n`;
+        if (r.notes) text += `הערות: ${r.notes}\n`;
+    } else if (r.category === 'c') {
+        text += `סוג: מרצה חוסן ואמונה\n`;
+        text += `שיעורים: ${r.lessonsCount || 0}\n`;
+        if (r.resilience) text += `חוסן ואמונה: ${r.resilience}\n`;
+        if (r.notes) text += `הערות: ${r.notes}\n`;
+    } else if (r.category === 'd') {
+        text += `סוג: מנהל התוכנית\n`;
+        if (r.goals) text += `יעדים: ${r.goals}\n`;
+        if (r.notes) text += `הערות: ${r.notes}\n`;
+    }
+    return text;
+}
+
+function updateExportPreview() {
+    const reports = window._dashReports || [];
+    let content = '';
+
+    if (exportMode === 'all') {
+        content = AI_PROMPT + '\n';
+        reports.forEach(r => { content += formatReportForExport(r) + '\n'; });
+    } else if (exportMode === 'single') {
+        const idx = parseInt(document.getElementById('export-single-select').value) || 0;
+        const r = reports[idx];
+        if (r) {
+            content = AI_PROMPT + '\n' + formatReportForExport(r);
+        }
+    } else if (exportMode === 'question') {
+        const field = document.getElementById('export-question-select').value;
+        const label = QUESTION_LABELS[field] || field;
+        content = `סכם לי את התשובות הבאות לשאלה "${label}" מכל המדווחים והצג לי:\n`;
+        content += `1. סיכום כללי של המצב\n2. המלצות לפעולה\n3. נקודות חריגות הנדרשות לבירור\n4. נקודות לחיוב\n5. נקודות לשלילה\n6. נקודות למיקוד להמשך\n\n`;
+        content += `השאלה: ${label}\nתשובות:\n\n`;
+        reports.forEach(r => {
+            const val = r[field];
+            if (val) content += `• ${r.person}: ${val}\n`;
+        });
+    }
+
+    document.getElementById('export-preview').value = content;
+}
+
+function copyExportToClipboard() {
+    const text = document.getElementById('export-preview').value;
+    if (!text) { showToast('אין תוכן להעתקה'); return; }
+    navigator.clipboard.writeText(text).then(() => {
+        showToast('הועתק! הדבק בכלי ה-AI שלך');
+    }).catch(() => {
+        // Fallback
+        const ta = document.getElementById('export-preview');
+        ta.select();
+        document.execCommand('copy');
+        showToast('הועתק! הדבק בכלי ה-AI שלך');
+    });
 }
 
 // ============================================================
